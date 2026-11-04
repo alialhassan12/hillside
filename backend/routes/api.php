@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AboutStatsController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\HeroController;
+use App\Http\Controllers\Api\ServicesController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -38,3 +39,14 @@ Route::put("/company/contact-banner/update",[CompanyController::class,'updateCon
 Route::post("/company/services-banner",[CompanyController::class,'storeServicesBanner']);
 Route::get("/company/services-banner",[CompanyController::class,'getServicesBanner']);
 Route::put("/company/services-banner/update",[CompanyController::class,'updateServicesBanner']);
+
+Route::post("/services",[ServicesController::class,'store']);
+Route::get("/services",[ServicesController::class,'getServices']);
+Route::put("/services/update",[ServicesController::class,'update']);
+Route::delete("/services/delete/{id}",[ServicesController::class,'delete']);
+
+
+Route::post("/services",[ServicesController::class,'store']);
+Route::get("/services",[ServicesController::class,'getServices']);
+Route::put("/services/update",[ServicesController::class,'update']);
+Route::delete("/services/delete/{id}",[ServicesController::class,'delete']);
