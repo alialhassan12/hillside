@@ -9,25 +9,25 @@ export default function HeroSection() {
     >
       <div className="absolute inset-0 bg-black/50" />
       <div className="relative z-10 mx-auto max-w-5xl px-6 text-center text-white">
-        <p className="mb-5 text-sm font-medium uppercase tracking-[0.3em] md:text-base">
+        <p className="mb-5 font-sans text-[13px] font-bold leading-[1.8] tracking-[1px] uppercase text-[#f5f5f5]">
           Serene Hilltop Luxury in Kenema City
         </p>
 
-        <h1 className="text-5xl font-bold leading-tight md:text-7xl lg:text-8xl">
+        <h1 className="font-serif text-[40px] leading-[1.2] font-bold text-white md:text-[80px]">
           Escape To Paradise...
         </h1>
 
-        <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+        <div className="mt-10 flex flex-col items-center justify-center gap-2 sm:flex-row">
           <a
             href="#tour"
-            className="rounded-md bg-amber-500 px-8 py-4 font-medium text-white transition-colors hover:bg-amber-600"
+            className="bg-forest px-6 py-4 font-bold text-white transition-colors duration-300"
           >
             Take A Tour
           </a>
 
           <Link
             to="/contact"
-            className="rounded-md border border-white px-8 py-4 font-medium text-white transition-colors hover:bg-white hover:text-slate-950"
+            className="bg-gold px-6 py-4 font-bold text-white transition-colors duration-300"
           >
             Contact Us
           </Link>

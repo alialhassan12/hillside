@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Link, NavLink } from "react-router";
+import { NavLink } from "react-router";
 import { Menu, X } from "lucide-react";
+import BrandWordmark from "./BrandWordmark";
 
 const navigation = [
   { label: "Home", path: "/" },
+  { label: "About Us", path: "/#about_us" },
   { label: "Services", path: "/services" },
   { label: "Contact", path: "/contact" },
 ];
@@ -14,9 +16,7 @@ export default function Navbar() {
   return (
     <header className="absolute inset-x-0 top-0 z-50">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-10">
-        <Link to="/" className="text-2xl font-bold tracking-wider text-white">
-          HILLSIDE
-        </Link>
+        <BrandWordmark />
 
         <div className="hidden items-center gap-10 md:flex">
           {navigation.map((item) => (
@@ -25,8 +25,8 @@ export default function Navbar() {
               to={item.path}
               end={item.path === "/"}
               className={({ isActive }) =>
-                `text-sm font-medium transition-colors hover:text-amber-300 ${
-                  isActive ? "text-amber-300" : "text-white"
+                `text-[15px] font-bold tracking-[2px] uppercase transition-colors hover:text-amber-300 ${
+                  isActive ? "text-white" : "text-white/70 hover:text-white"
                 }`
               }
             >
