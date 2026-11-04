@@ -3,9 +3,15 @@
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
-# Stage 1: Build PHP Composer Dependencies
+# Stage 1: Build PHP Composer Dependencies using PHP 8.4
 # ------------------------------------------------------------------------------
-FROM composer:2 AS vendor
+FROM php:8.4-cli-alpine AS vendor
+
+# Install git/unzip if needed by composer
+RUN apk add --no-cache git unzip curl
+
+# Copy Composer binary from official image
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
@@ -25,9 +31,9 @@ COPY . .
 RUN composer dump-autoload --optimize --no-dev
 
 # ------------------------------------------------------------------------------
-# Stage 2: Production Runtime with PHP 8.3 FPM + Nginx + Supervisor
+# Stage 2: Production Runtime with PHP 8.4 FPM + Nginx + Supervisor
 # ------------------------------------------------------------------------------
-FROM php:8.3-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 # Install system dependencies, Nginx, Supervisor, and dos2unix
 RUN apk add --no-cache \
