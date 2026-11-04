@@ -1,3 +1,9 @@
+import HeroSection from "../../sections/home/HeroSection";
+
 export default function HomePage() {
-  return <h1>Hillside Hotel — Home</h1>;
+  return (
+    <main>
+      <HeroSection />
+    </main>
+  );
 }

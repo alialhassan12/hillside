@@ -1,1 +1,45 @@
 @import "tailwindcss";
+
+@theme {
+  /* Typography */
+  --font-sans: "Nunito", Arial, sans-serif;
+  --font-serif: "Old Standard TT", Arial, sans-serif;
+
+  /* Brand colors */
+  --color-forest: #00261c;
+  --color-gold: #ad8748;
+  --color-gold-bright: #d4af37;
+  --color-gold-muted: #c9a646;
+  --color-sand: #c5a880;
+
+  /* Backgrounds */
+  --color-ink: #222222;
+  --color-surface: #f8f8f8;
+  --color-footer: #1a1a1a;
+  --color-footer-deep: #151515;
+
+  /* Text */
+  --color-body: #999999;
+  --color-heading: rgb(0 0 0 / 0.8);
+
+  /* Responsive breakpoints */
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+  --breakpoint-2xl: 1400px;
+}
+
+@layer base {
+  body {
+    @apply bg-surface font-sans text-body;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    @apply font-serif;
+  }
+}

@@ -5,6 +5,12 @@ import { Toaster } from "sonner";
 
 import App from "./App";
 import "./index.css";
+import "@fontsource/nunito/400.css";
+import "@fontsource/nunito/600.css";
+import "@fontsource/nunito/700.css";
+
+import "@fontsource/old-standard-tt/400.css";
+import "@fontsource/old-standard-tt/700.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
