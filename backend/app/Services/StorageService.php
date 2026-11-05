@@ -10,7 +10,7 @@ class StorageService {
 
     public function __construct()
     {
-        $this->disk=config('filesystem.default','public');
+        $this->disk=config('filesystem.default');
     }
 
     // upload
@@ -27,7 +27,7 @@ class StorageService {
         string $path
     ):bool
     {
-        if(!$path || !Storage::disk($this->disk)->exists($path)){
+        if(!$path){
             return false;
         }
 
