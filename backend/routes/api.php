@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AboutController;
 use App\Http\Controllers\Api\AboutStatsController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\GalleryController;
 use App\Http\Controllers\Api\HeroController;
 use App\Http\Controllers\Api\ServiceDetailsController;
 use App\Http\Controllers\Api\ServicesController;
@@ -56,3 +57,13 @@ Route::post("/services/details",[ServiceDetailsController::class,'store']);
 Route::get("/services/details/{id}",[ServiceDetailsController::class,'getServiceDetails']);
 Route::put("/services/details/update",[ServiceDetailsController::class,'update']);
 Route::delete("/services/details/delete/{id}",[ServiceDetailsController::class,'delete']);
+
+Route::post("/gallery/images",[GalleryController::class,'storeImage']);
+Route::get("/gallery/images",[GalleryController::class,'getGallery']);
+Route::delete("/gallery/images/delete/{id}",[GalleryController::class,'delete']);
+
+Route::post("/gallery/video",[GalleryController::class,'storeVideo']);
+Route::post("/gallery/video/thumbnail",[GalleryController::class,'storeVideoThumbnail']);
+Route::get("/gallery/video",[GalleryController::class,'getVideo']);
+Route::put("/gallery/video/update",[GalleryController::class,'updateVideo']);
+Route::put("/gallery/video/thumbnail/update",[GalleryController::class,'updateVideoThumbnail']);

@@ -34,7 +34,7 @@ class ServiceDetailsController extends Controller
     }
 
     public function getServiceDetails($id){
-        $serviceDetails=ServiceDetail::where('service_id',$id)->get();
+        $serviceDetails=ServiceDetail::where('service_id',$id)->findorFail();
 
         if($serviceDetails->isEmpty()){
             return response()->json([
