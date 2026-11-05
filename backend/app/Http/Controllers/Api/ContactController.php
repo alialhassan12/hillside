@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
 use App\Models\Contact;
 use App\Services\StorageService;
 use Illuminate\Http\Request;
@@ -90,6 +91,35 @@ class ContactController extends Controller
 
         return response()->json([
             'message'=>'Contact deleted successfully'
+        ],200);
+    }
+
+    public function fetchFooterData(){
+        $contacts=Contact::all();
+        $address=Company::select('address','address_icon')->first();
+
+        if($contacts->isEmpty()){
+            return response()->json([
+                'message'=>'No contacts found'
+            ],404);
+        }
+        if($address->isEmpty()){
+            return response()->json([
+                'message'=>'No address found'
+            ],404);
+        }
+
+        $data=[
+            ...$contacts->toArray(),
+            'address'=>[
+                'address'=>$address->address,
+                'address_icon'=>$address->address_icon
+            ]
+        ];
+
+        return response()->json([
+            'message'=>'Footer data retrieved successfully',
+            'data'=>$data
         ],200);
     }
 }

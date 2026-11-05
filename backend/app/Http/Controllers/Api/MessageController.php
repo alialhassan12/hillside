@@ -25,9 +25,14 @@ class MessageController extends Controller
         ],201);
     }
 
-    public function getMessages($perPage=10){
-        $messages=Message::paginate($perPage);
-        
+    public function getMessages(string $search,$perPage=10){
+        $messages=Message::where('name','like',"%$search%")
+            ->orWhere('email','like',"%$search%")
+            ->orWhere('message','like',"%$search%")
+            ->orWhere('subject','like',"%$search%")
+            ->orWhere('phone','like',"%$search%")
+            ->paginate($perPage);
+
         if($messages->isEmpty()){
             return response()->json([
                 'message'=>'No messages found'

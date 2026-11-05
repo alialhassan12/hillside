@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\HeroController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\ServiceDetailsController;
 use App\Http\Controllers\Api\ServicesController;
+use App\Http\Controllers\Api\TestimonialsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -66,3 +67,10 @@ Route::post("/messages/send",[MessageController::class,'send']);
 Route::get("/messages",[MessageController::class,'getMessages']);
 Route::put("/messages/status/change",[MessageController::class,'changeStatus']);
 Route::delete("/messages/delete/{id}",[MessageController::class,'delete']);
+
+Route::get("/footer",[ContactController::class,'fetchFooterData']);
+
+Route::post("/feedback/send",[TestimonialsController::class,'send']);
+Route::get("/testimonials",[TestimonialsController::class,'getTestimonials']);
+Route::put("/testimonials/status/change",[TestimonialsController::class,'changeStatus']);
+Route::put("/testimonials/visibility/change",[TestimonialsController::class,'changeVisibility']);
