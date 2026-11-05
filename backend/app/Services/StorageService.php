@@ -19,7 +19,13 @@ class StorageService {
         string $directory='uploads'
     ):string
     {
-        return $file->store($directory,$this->disk);
+        $path=$file->store($directory,$this->disk);
+
+        if($path===false){
+            throw new \RuntimeException('File upload failed. Could not store file to disk: '.$this->disk);
+        }
+
+        return $path;
     }
 
     // delete
