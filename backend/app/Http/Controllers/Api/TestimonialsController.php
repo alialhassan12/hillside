@@ -38,14 +38,20 @@ class TestimonialsController extends Controller
     public function getTestimonials(){
         $search=request()->query('search','all');
         $status=request()->query('status','all');
+        $visibility=request()->query('visibility',null);
 
         $testimonials=Testimonial::when($status!=='all',function($query) use ($status){
             $query->where('status',$status);
         })
         ->when($search!=='all',function($query) use ($search){
-            $query->where('name','like',"%$search%")
+            $query->where(function($q) use ($search){
+                $q->where('name','like',"%$search%")
                 ->orWhere('representation','like',"%$search%")
                 ->orWhere('feedback','like',"%$search%");
+            });
+        })
+        ->when($visibility!==null,function($query) use ($visibility){
+            $query->where('is_shown',$visibility);
         })
         ->paginate(10);
 
@@ -94,6 +100,12 @@ class TestimonialsController extends Controller
             return response()->json([
                 'message'=>'Testimonial not found'
             ],404);
+        }
+
+        if($testimonial->status!=='approved'){
+            return response()->json([
+                'message'=>'Only approved testimonials can be shown'
+            ],400);
         }
 
         $testimonial->is_shown=$validated['is_shown'];
