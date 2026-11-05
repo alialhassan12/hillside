@@ -112,7 +112,7 @@ class GalleryController extends Controller
     }
 
     public function getVideo(){
-        $video=Video::firstOrFail();
+        $video=Video::first();
 
         if(!$video){
             return response()->json([

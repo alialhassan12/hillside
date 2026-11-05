@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ServiceDetail;
 use App\Services\StorageService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ServiceDetailsController extends Controller
 {
@@ -34,7 +35,8 @@ class ServiceDetailsController extends Controller
     }
 
     public function getServiceDetails($id){
-        $serviceDetails=ServiceDetail::where('service_id',$id)->findorFail();
+        Log::info("Fetching service details for service ID: $id");
+        $serviceDetails = ServiceDetail::where('service_id', $id)->get();
 
         if($serviceDetails->isEmpty()){
             return response()->json([
@@ -67,9 +69,6 @@ class ServiceDetailsController extends Controller
             $this->storage->delete($serviceDetail->image);
             $imagePath=$this->storage->upload($validated['image'],'service_details');
             $validated['image']=$imagePath;
-        }{
-            $this->storage->delete($serviceDetail->image);
-            $validated['image']="";
         }
 
         $serviceDetail->update($validated);

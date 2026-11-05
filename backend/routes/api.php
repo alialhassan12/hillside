@@ -47,12 +47,6 @@ Route::get("/services",[ServicesController::class,'getServices']);
 Route::put("/services/update",[ServicesController::class,'update']);
 Route::delete("/services/delete/{id}",[ServicesController::class,'delete']);
 
-
-Route::post("/services",[ServicesController::class,'store']);
-Route::get("/services",[ServicesController::class,'getServices']);
-Route::put("/services/update",[ServicesController::class,'update']);
-Route::delete("/services/delete/{id}",[ServicesController::class,'delete']);
-
 Route::post("/services/details",[ServiceDetailsController::class,'store']);
 Route::get("/services/details/{id}",[ServiceDetailsController::class,'getServiceDetails']);
 Route::put("/services/details/update",[ServiceDetailsController::class,'update']);
