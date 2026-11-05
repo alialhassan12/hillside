@@ -1,8 +1,10 @@
 import { Link } from "react-router";
 import { useContactBanner } from "../../hooks/useContactBanner";
-import { useForm, useFormState, useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useContacts } from "../../hooks/useContacts";
+import { useCompanyAddress } from "../../hooks/useCompanyAddress";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Please enter your name"),
@@ -42,9 +44,14 @@ export default function ContactPage() {
     defaultValue: "",
   });
 
-  function onSubmit(_values: ContactFormValues) {
-    // Laravel submission endpoint is not confirmed yet.
-  }
+  function onSubmit(_values: ContactFormValues) {}
+
+  const { data: contacts = [] } = useContacts();
+  const { data: companyAddress } = useCompanyAddress();
+
+  const email = contacts.find(
+    (contact) => contact.name.toLowerCase() === "email",
+  );
 
   return (
     <>
@@ -82,14 +89,14 @@ export default function ContactPage() {
             </p>
           </div>
 
-          {/* Temporary contact information */}
           <div className="mx-auto mt-8 grid max-w-150 grid-cols-1 gap-6 text-center sm:grid-cols-2">
             <div>
               <h3 className="font-sans text-sm font-semibold text-heading">
                 Address:
               </h3>
+
               <p className="mt-2 text-sm leading-6 text-body">
-                Reservation Road, Kenema, Sierra Leone.
+                {companyAddress?.address ?? "Address unavailable"}
               </p>
             </div>
 
@@ -97,12 +104,17 @@ export default function ContactPage() {
               <h3 className="font-sans text-sm font-semibold text-heading">
                 Email:
               </h3>
-              <a
-                href="mailto:hillside.hotel.info@gmail.com"
-                className="mt-2 block text-sm text-sand hover:text-forest"
-              >
-                hillside.hotel.info@gmail.com
-              </a>
+
+              {email ? (
+                <a
+                  href={`mailto:${email.link}`}
+                  className="mt-2 block break-all text-sm text-sand hover:text-forest"
+                >
+                  {email.link}
+                </a>
+              ) : (
+                <p className="mt-2 text-sm text-body">Email unavailable</p>
+              )}
             </div>
           </div>
 

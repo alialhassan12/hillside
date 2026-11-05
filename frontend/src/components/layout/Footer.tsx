@@ -1,11 +1,23 @@
 import { Link } from "react-router";
-import { ChevronRight, Mail, MapPin } from "lucide-react";
-import { FaInstagram } from "react-icons/fa6";
+import { ChevronRight } from "lucide-react";
+
 import BrandWordmark from "./BrandWordmark";
 import { useServices } from "../../hooks/useServices";
+import { useContacts } from "../../hooks/useContacts";
+import { useCompanyAddress } from "../../hooks/useCompanyAddress";
 
 export default function Footer() {
   const { data: services = [] } = useServices();
+  const { data: contacts = [] } = useContacts();
+  const { data: companyAddress } = useCompanyAddress();
+
+  const instagram = contacts.find(
+    (contact) => contact.name.toLowerCase() === "instagram",
+  );
+
+  const email = contacts.find(
+    (contact) => contact.name.toLowerCase() === "email",
+  );
 
   return (
     <footer className="bg-footer font-sans text-white">
@@ -18,17 +30,21 @@ export default function Footer() {
             Luxury hilltop retreat surrounded by nature's beauty.
           </p>
 
-          <div className="mt-5 flex items-center gap-2">
+          {instagram && (
             <a
-              href="https://www.instagram.com/"
+              href={instagram.link}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Instagram"
-              className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-white transition-colors hover:bg-gold"
+              aria-label="Hillside Hotel Instagram"
+              className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 transition-colors hover:bg-gold"
             >
-              <FaInstagram size={20} />
+              <img
+                src={instagram.icon_url}
+                alt=""
+                className="h-6 w-6 object-contain"
+              />
             </a>
-          </div>
+          )}
         </div>
 
         {/* Services */}
@@ -93,17 +109,31 @@ export default function Footer() {
 
           <div className="space-y-4 text-sm text-white/60">
             <div className="flex items-start gap-3">
-              <MapPin size={18} className="shrink-0 text-white" />
-              <span>Reservation Road, Kenema, Sierra Leone.</span>
+              {companyAddress?.address_icon_url && (
+                <img
+                  src={companyAddress.address_icon_url}
+                  alt=""
+                  className="h-5 w-5 shrink-0 object-contain"
+                />
+              )}
+
+              <span>{companyAddress?.address}</span>
             </div>
 
-            <a
-              href="mailto:hillside.hotel.info@gmail.com"
-              className="flex items-start gap-3 hover:text-sand"
-            >
-              <Mail size={18} className="shrink-0 text-white" />
-              hillside.hotel.info@gmail.com
-            </a>
+            {email && (
+              <a
+                href={`mailto:${email.link}`}
+                className="flex items-start gap-3 hover:text-sand"
+              >
+                <img
+                  src={email.icon_url}
+                  alt=""
+                  className="h-5 w-5 shrink-0 object-contain"
+                />
+
+                <span className="break-all">{email.link}</span>
+              </a>
+            )}
           </div>
         </div>
       </div>

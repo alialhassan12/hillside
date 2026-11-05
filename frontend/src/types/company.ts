@@ -22,3 +22,15 @@ export interface ContactBannerResponse {
   data: ContactBanner;
 }
 
+export interface CompanyAddress {
+  address: string;
+  address_icon: string;
+  address_icon_url: string;
+  contact_banner_img_url: string;
+  services_banner_img_url: string;
+}
+
+export interface CompanyAddressResponse {
+  message: string;
+  data: CompanyAddress;
+}

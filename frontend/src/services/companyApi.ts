@@ -6,6 +6,8 @@ import type {
   ServicesBannerResponse,
 } from "../types/company";
 
+import type { CompanyAddress, CompanyAddressResponse } from "../types/company";
+
 export async function getServicesBanner(): Promise<ServicesBanner> {
   const response = await api.get<ServicesBannerResponse>(
     "/company/services-banner",
@@ -17,6 +19,12 @@ export async function getContactBanner(): Promise<ContactBanner> {
   const response = await api.get<ContactBannerResponse>(
     "/company/contact-banner",
   );
+
+  return response.data.data;
+}
+
+export async function getCompanyAddress(): Promise<CompanyAddress> {
+  const response = await api.get<CompanyAddressResponse>("/company/address");
 
   return response.data.data;
 }
