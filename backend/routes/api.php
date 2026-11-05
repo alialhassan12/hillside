@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\GalleryController;
 use App\Http\Controllers\Api\HeroController;
+use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\ServiceDetailsController;
 use App\Http\Controllers\Api\ServicesController;
 use Illuminate\Http\Request;
@@ -60,3 +61,8 @@ Route::post("/gallery/video",[GalleryController::class,'storeVideo']);
 Route::get("/gallery/video",[GalleryController::class,'getVideo']);
 Route::put("/gallery/video/update",[GalleryController::class,'updateVideo']);
 Route::put("/gallery/video/thumbnail/update",[GalleryController::class,'updateVideoThumbnail']);
+
+Route::post("/messages/send",[MessageController::class,'send']);
+Route::get("/messages",[MessageController::class,'getMessages']);
+Route::put("/messages/status/change",[MessageController::class,'changeStatus']);
+Route::delete("/messages/delete/{id}",[MessageController::class,'delete']);
