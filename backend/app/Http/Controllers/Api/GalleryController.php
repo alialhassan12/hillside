@@ -63,33 +63,10 @@ class GalleryController extends Controller
         ],200);
     }
 
-    public function storeVideoThumbnail(Request $request){
-        $validated=$request->validate([
-            'thumbnail_path'=>['required','image','max:1048']
-        ]);
-
-        $videoExisting=Video::first();
-        if($videoExisting){
-            return response()->json([
-                'message'=>'Video already exists. Please update the existing video instead of uploading a new one.'
-            ],400);
-        }
-
-        $thumbnailPath=$this->storage->upload($validated['thumbnail_path'],'thumbnails');
-
-        $validated['thumbnail_path']=$thumbnailPath;
-
-        $video=Video::create($validated);
-
-        return response()->json([
-            'message'=>'Video and thumbnail uploaded successfully',
-            'data'=>$video
-        ],201);
-    }
-
     public function storeVideo(Request $request){
         $validated=$request->validate([
             'video_path'=>['required','file','mimetypes:video/mp4,video/avi,video/mpeg,video/quicktime'],
+            'thumbnail_path'=>['required','image','max:5120'],
         ]);
 
         $videoExisting=Video::first();
@@ -100,10 +77,12 @@ class GalleryController extends Controller
         }
 
         $videoPath=$this->storage->upload($validated['video_path'],'videos');
+        $thumbnailPath=$this->storage->upload($validated['thumbnail_path'],'thumbnails');
 
-        $validated['video_path']=$videoPath;
-
-        $video=Video::create($validated);
+        $video=Video::create([
+            'video_path'=>$videoPath,
+            'thumbnail_path'=>$thumbnailPath,
+        ]);
 
         return response()->json([
             'message'=>'Video and thumbnail uploaded successfully',

@@ -57,7 +57,6 @@ Route::get("/gallery/images",[GalleryController::class,'getGallery']);
 Route::delete("/gallery/images/delete/{id}",[GalleryController::class,'delete']);
 
 Route::post("/gallery/video",[GalleryController::class,'storeVideo']);
-Route::post("/gallery/video/thumbnail",[GalleryController::class,'storeVideoThumbnail']);
 Route::get("/gallery/video",[GalleryController::class,'getVideo']);
 Route::put("/gallery/video/update",[GalleryController::class,'updateVideo']);
 Route::put("/gallery/video/thumbnail/update",[GalleryController::class,'updateVideoThumbnail']);
