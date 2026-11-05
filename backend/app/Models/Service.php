@@ -18,4 +18,9 @@ class Service extends Model
         $storageService = app(StorageService::class);
         return $storageService->getUrl($this->icon);
     }
+
+    public function serviceDetails()
+    {
+        return $this->hasMany(ServiceDetail::class);
+    }
 }

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AboutStatsController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\HeroController;
+use App\Http\Controllers\Api\ServiceDetailsController;
 use App\Http\Controllers\Api\ServicesController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -50,3 +51,8 @@ Route::post("/services",[ServicesController::class,'store']);
 Route::get("/services",[ServicesController::class,'getServices']);
 Route::put("/services/update",[ServicesController::class,'update']);
 Route::delete("/services/delete/{id}",[ServicesController::class,'delete']);
+
+Route::post("/services/details",[ServiceDetailsController::class,'store']);
+Route::get("/services/details",[ServiceDetailsController::class,'getServiceDetails']);
+Route::put("/services/details/update",[ServiceDetailsController::class,'update']);
+Route::delete("/services/details/delete/{id}",[ServiceDetailsController::class,'delete']);
