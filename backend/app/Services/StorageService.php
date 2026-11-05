@@ -10,7 +10,7 @@ class StorageService {
 
     public function __construct()
     {
-        $this->disk=config('filesystem.default');
+        $this->disk = config('filesystems.default', 'neon');
     }
 
     // upload
@@ -35,7 +35,12 @@ class StorageService {
     }
 
     // get public url
-    public function getUrl(string $path):string{
+    public function getUrl(?string $path): string
+    {
+        if (!$path) {
+            return '';
+        }
+
         /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
         $disk = Storage::disk($this->disk);
 
