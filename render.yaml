@@ -1,0 +1,53 @@
+services:
+  - type: web
+    name: hillside-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: Hillside
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: info
+      - key: APP_KEY
+        generateValue: true
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      - key: FILESYSTEM_DISK
+        value: neon
+      - key: NEON_STORAGE_ACCESS_KEY
+        sync: false
+      - key: NEON_STORAGE_SECRET_KEY
+        sync: false
+      - key: NEON_STORAGE_BUCKET
+        sync: false
+      - key: NEON_STORAGE_ENDPOINT
+        sync: false
+      - key: NEON_STORAGE_URL
+        sync: false
+      - key: NEON_STORAGE_REGION
+        value: us-east-2
+      - key: RUN_MIGRATIONS
+        value: "true"
+
