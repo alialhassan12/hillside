@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getServicesBanner } from "../services/companyServicesApi";
+import { getServicesBanner } from "../services/companyApi";
 
 export function useServicesBanner() {
   return useQuery({
