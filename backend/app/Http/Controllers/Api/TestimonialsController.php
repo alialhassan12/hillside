@@ -35,7 +35,10 @@ class TestimonialsController extends Controller
         ],201);
     }
 
-    public function getTestimonials($status='all',$search='all'){
+    public function getTestimonials(){
+        $search=request()->query('search','all');
+        $status=request()->query('status','all');
+
         $testimonials=Testimonial::when($status!=='all',function($query) use ($status){
             $query->where('status',$status);
         })

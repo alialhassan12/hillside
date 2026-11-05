@@ -25,7 +25,9 @@ class MessageController extends Controller
         ],201);
     }
 
-    public function getMessages(string $search="all"){
+    public function getMessages(){
+        $search=request()->query('search','all');
+        
         $messages=Message::when($search !== "all", function ($query) use ($search) {
                 $query->where('name','like',"%$search%")
                     ->orWhere('email','like',"%$search%")
