@@ -33,12 +33,8 @@ class ServiceDetailsController extends Controller
         ],201);
     }
 
-    public function getServiceDetails(Request $request){
-        $validated=$request->validate([
-            'service_id'=>['required','uuid','exists:services,id']
-        ]);
-
-        $serviceDetails=ServiceDetail::where('service_id',$validated['service_id'])->get();
+    public function getServiceDetails($id){
+        $serviceDetails=ServiceDetail::where('service_id',$id)->get();
 
         if($serviceDetails->isEmpty()){
             return response()->json([

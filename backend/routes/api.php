@@ -53,6 +53,6 @@ Route::put("/services/update",[ServicesController::class,'update']);
 Route::delete("/services/delete/{id}",[ServicesController::class,'delete']);
 
 Route::post("/services/details",[ServiceDetailsController::class,'store']);
-Route::get("/services/details",[ServiceDetailsController::class,'getServiceDetails']);
+Route::get("/services/details/{id}",[ServiceDetailsController::class,'getServiceDetails']);
 Route::put("/services/details/update",[ServiceDetailsController::class,'update']);
 Route::delete("/services/details/delete/{id}",[ServiceDetailsController::class,'delete']);
