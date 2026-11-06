@@ -68,6 +68,24 @@ class TestimonialsController extends Controller
         ],200);
     }
 
+    public function getPublicTestimonials(){
+        $testimonials=Testimonial::where('is_shown',true)
+            ->where('status','approved')
+            ->orderBy('created_at','desc')
+            ->get();
+
+        if(!$testimonials){
+            return response()->json([
+                'message'=>'No testimonials found'
+            ],404);
+        }
+
+        return response()->json([
+            'message'=>'Testimonials retrieved successfully',
+            'data'=>$testimonials
+        ],200);
+    }
+
     public function changeStatus(Request $request){
         $validated=$request->validate([
             'id'=>['required','uuid','exists:testimonials,id'],
@@ -115,6 +133,25 @@ class TestimonialsController extends Controller
         return response()->json([
             'message'=>'Testimonial visibility updated successfully',
             'data'=>$testimonial
+        ],200);
+    }
+
+    public function deleteTestimonial($id){
+        $testimonial=Testimonial::find($id);
+        if(!$testimonial){
+            return response()->json([
+                'message'=>'Testimonial not found'
+            ],404);
+        }
+        if($testimonial->status !== 'rejected'){
+            return response()->json([
+                'message'=>'Only rejected testimonials can be deleted'
+            ],400);
+        }
+        
+        $testimonial->delete();
+        return response()->json([
+            'message'=>'Testimonial deleted successfully'
         ],200);
     }
 }

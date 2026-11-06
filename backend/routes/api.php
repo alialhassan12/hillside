@@ -21,6 +21,8 @@ Route::middleware('throttle:public-form')->post('/login',[AuthConreoller::class,
 
 Route::middleware('auth:sanctum')->group(function(){
     Route::post('/logout',[AuthConreoller::class,'logout']);
+
+    Route::middleware('throttle:public-form')->post('/users',[AuthConreoller::class,'getUsers']);
     Route::middleware('throttle:public-form')->post('/add-admin',[AuthConreoller::class,'addUser']);
     Route::middleware('throttle:public-form')->put('/edit-admin',[AuthConreoller::class,'editUser']);
     Route::middleware('throttle:public-form')->delete('/delete-admin/{id}',[AuthConreoller::class,'deleteUser']);
@@ -65,8 +67,10 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::delete("/messages/delete/{id}",[MessageController::class,'delete']);
 
     Route::get("/testimonials",[TestimonialsController::class,'getTestimonials']);
+    Route::get("/testimonials/public",[TestimonialsController::class,'getPublicTestimonials']);
     Route::put("/testimonials/status/change",[TestimonialsController::class,'changeStatus']);
     Route::put("/testimonials/visibility/change",[TestimonialsController::class,'changeVisibility']);
+    Route::delete("/testimonials/delete/{id}",[TestimonialsController::class,'deleteTestimonial']);
 
     Route::get("/dashboard",[DashboardController::class,'dashboardData']);
 });
