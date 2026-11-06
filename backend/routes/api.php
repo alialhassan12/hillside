@@ -5,7 +5,7 @@ use App\Http\Controllers\Api\AboutStatsController;
 use App\Http\Controllers\Api\AuthConreoller;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\ContactController;
-use App\Http\Controllers\APi\DashboardController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\GalleryController;
 use App\Http\Controllers\Api\HeroController;
 use App\Http\Controllers\Api\MessageController;
