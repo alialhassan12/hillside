@@ -3,6 +3,7 @@
 
 const TOKEN_KEY = "hillside_admin_token";
 const USERNAME_KEY = "hillside_admin_username";
+const USER_ID_KEY = "hillside_admin_id";
 
 export function getToken(): string | null {
   try {
@@ -20,10 +21,28 @@ export function getUsername(): string | null {
   }
 }
 
-export function saveSession(token: string, username: string) {
+export function getUserId(): string | null {
+  try {
+    return localStorage.getItem(USER_ID_KEY);
+  } catch {
+    return null;
+  }
+}
+
+// After the admin renames their own account.
+export function saveUsername(username: string) {
+  try {
+    localStorage.setItem(USERNAME_KEY, username);
+  } catch {
+    // Storage blocked: the header shows the old name until next login.
+  }
+}
+
+export function saveSession(token: string, username: string, userId: string) {
   try {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USERNAME_KEY, username);
+    localStorage.setItem(USER_ID_KEY, userId);
   } catch {
     // Storage blocked (private mode): the session lasts until reload.
   }
@@ -33,6 +52,7 @@ export function clearSession() {
   try {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USERNAME_KEY);
+    localStorage.removeItem(USER_ID_KEY);
   } catch {
     // Nothing to clear.
   }

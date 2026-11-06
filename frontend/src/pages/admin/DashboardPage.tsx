@@ -6,11 +6,9 @@ import {
   cardHeaderClass,
   cardTitleClass,
 } from "../../components/admin/adminClasses";
-import { useServices } from "../../hooks/useServices";
-import { useGalleryImages } from "../../hooks/useGallery";
-import { useTestimonials } from "../../hooks/useTestimonials";
+import { useDashboard } from "../../hooks/useDashboard";
 import { useMessages } from "../../hooks/useMessages";
-import { isNotFound } from "../../lib/apiErrors";
+import type { TestimonialStatus } from "../../types/testimonial";
 
 const quickActions = [
   { label: "Edit homepage hero", icon: House, to: "/admin/homepage" },
@@ -22,60 +20,58 @@ const quickActions = [
 const PREVIEW_ROWS = 5;
 const skeletonClass = "animate-pulse rounded bg-stone-200 motion-reduce:animate-none";
 
+const statusLabels: Record<TestimonialStatus, string> = {
+  pending: "Pending",
+  approved: "Approved",
+  rejected: "Rejected",
+};
+
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString(undefined, { dateStyle: "medium" });
 }
 
 export default function DashboardPage() {
-  const services = useServices();
-  const gallery = useGalleryImages();
-  // Same query as page 1 of the Pending tab; only its total is used.
-  const pendingTestimonials = useTestimonials({
-    status: "pending",
-    search: "",
-    page: 1,
-  });
-  // Page 1 of the inbox: its total and a preview of its rows.
+  // Counts and latest feedback from GET /api/dashboard.
+  const dashboard = useDashboard();
+  // Page 1 of the inbox (newest first) for the recent messages table.
   const messages = useMessages(1, "");
 
-  // Services and gallery answer 404 when empty, which means 0 here.
   const summaryCards = [
     {
       label: "Services",
       to: "/admin/services",
       hint: "Listed on the website",
-      isPending: services.isPending,
-      isError: services.isError && !isNotFound(services.error),
-      value: services.data?.length ?? 0,
+      isPending: dashboard.isPending,
+      isError: dashboard.isError,
+      value: dashboard.data?.total_services ?? 0,
     },
     {
       label: "Gallery photos",
       to: "/admin/media",
       hint: "In the homepage gallery",
-      isPending: gallery.isPending,
-      isError: gallery.isError && !isNotFound(gallery.error),
-      value: gallery.data?.length ?? 0,
+      isPending: dashboard.isPending,
+      isError: dashboard.isError,
+      value: dashboard.data?.gallery_count ?? 0,
     },
     {
       label: "Pending testimonials",
       to: "/admin/testimonials",
       hint: "Waiting for review",
-      isPending: pendingTestimonials.isPending,
-      isError: pendingTestimonials.isError,
-      value: pendingTestimonials.data?.total ?? 0,
+      isPending: dashboard.isPending,
+      isError: dashboard.isError,
+      value: dashboard.data?.pending_feedbacks ?? 0,
     },
     {
-      label: "Messages",
+      label: "Unread messages",
       to: "/admin/messages",
-      hint: "Received through the contact form",
-      isPending: messages.isPending,
-      isError: messages.isError,
-      value: messages.data?.total ?? 0,
+      hint: "Not marked as read yet",
+      isPending: dashboard.isPending,
+      isError: dashboard.isError,
+      value: dashboard.data?.unread_messages ?? 0,
     },
   ];
 
-  // Laravel paginates without ordering, so this is a preview of the
-  // first page (sorted newest first), not the newest messages overall.
+  // The API returns messages newest first.
   const previewMessages = [...(messages.data?.data ?? [])]
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
     .slice(0, PREVIEW_ROWS);
@@ -168,11 +164,8 @@ export default function DashboardPage() {
           <div className={cardHeaderClass}>
             <div className="flex items-center gap-3">
               <h2 id="recent-messages-title" className={cardTitleClass}>
-                Inbox preview
+                Recent messages
               </h2>
-              <span className="text-xs text-stone-500">
-                From the first page of the inbox
-              </span>
             </div>
 
             <Link
@@ -265,6 +258,99 @@ export default function DashboardPage() {
           )}
         </section>
       </div>
+
+      <section
+        className={`${cardClass} mt-6`}
+        aria-labelledby="latest-feedback-title"
+      >
+        <div className={cardHeaderClass}>
+          <h2 id="latest-feedback-title" className={cardTitleClass}>
+            Latest feedback
+          </h2>
+          <Link
+            to="/admin/testimonials"
+            className="text-sm font-medium text-forest underline-offset-4 hover:underline"
+          >
+            Review all
+          </Link>
+        </div>
+
+        {dashboard.isPending ? (
+          <ul
+            role="status"
+            aria-label="Loading latest feedback"
+            className="divide-y divide-stone-100"
+          >
+            {Array.from({ length: 3 }, (_, row) => (
+              <li key={row} className="flex items-start gap-3 px-5 py-4">
+                <span className={`${skeletonClass} h-9 w-9 shrink-0 rounded-full`} />
+                <span className="flex-1 space-y-2">
+                  <span className={`${skeletonClass} block h-4 w-32`} />
+                  <span className={`${skeletonClass} block h-4 w-full`} />
+                </span>
+                <span className={`${skeletonClass} h-4 w-16`} />
+              </li>
+            ))}
+          </ul>
+        ) : dashboard.isError ? (
+          <p role="alert" className="p-5 text-sm text-red-600">
+            Failed to load the latest feedback
+          </p>
+        ) : !dashboard.data?.top_feedbacks.length ? (
+          <p className="p-5 text-sm text-stone-500">No feedback yet</p>
+        ) : (
+          <ul className="divide-y divide-stone-100">
+            {dashboard.data.top_feedbacks.map((feedback) => (
+              <li key={feedback.id} className="flex items-start gap-3 px-5 py-4">
+                {feedback.profile_url ? (
+                  <img
+                    src={feedback.profile_url}
+                    alt=""
+                    className="h-9 w-9 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-stone-100 text-sm font-medium text-stone-600"
+                  >
+                    {feedback.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-stone-900">
+                    {feedback.name}
+                    <span className="ml-2 font-normal text-stone-500 tabular-nums">
+                      {formatDate(feedback.created_at)}
+                    </span>
+                  </p>
+                  <p className="mt-0.5 line-clamp-2 text-sm text-stone-600">
+                    {feedback.feedback}
+                  </p>
+                </div>
+
+                <span
+                  className={`inline-flex shrink-0 items-center gap-2 text-sm ${
+                    feedback.status === "pending"
+                      ? "text-stone-900"
+                      : "text-stone-500"
+                  }`}
+                >
+                  {feedback.status === "pending" && (
+                    <span
+                      aria-hidden="true"
+                      className="h-2 w-2 rounded-full bg-gold"
+                    />
+                  )}
+                  {statusLabels[feedback.status]}
+                  {feedback.status === "approved" &&
+                    (feedback.is_shown ? " · Shown" : " · Hidden")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </>
   );
 }

@@ -61,7 +61,7 @@ export default function LoginPage() {
 
     try {
       const result = await login(values);
-      saveSession(result.token, result.user.username);
+      saveSession(result.token, result.user.username, result.user.id);
       navigate(destination, { replace: true });
     } catch (error) {
       const fieldErrors = getValidationErrors(error);
