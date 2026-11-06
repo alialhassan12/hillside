@@ -8,13 +8,18 @@ import {
   changeMessageStatus,
   deleteMessage,
   getMessages,
+  type MessageFilter,
   sendMessage,
 } from "../services/messageApi";
 
-export function useMessages(page: number, search: string) {
+export function useMessages(
+  page: number,
+  search: string,
+  filter: MessageFilter = "all",
+) {
   return useQuery({
-    queryKey: ["messages", page, search],
-    queryFn: () => getMessages(page, search),
+    queryKey: ["messages", page, search, filter],
+    queryFn: () => getMessages(page, search, filter),
     // Keep the current page on screen while the next one loads.
     placeholderData: keepPreviousData,
   });

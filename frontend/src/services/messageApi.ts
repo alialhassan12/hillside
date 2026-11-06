@@ -6,13 +6,20 @@ import type {
   MessagesResponse,
 } from "../types/message";
 
+export type MessageFilter = "all" | MessageStatus;
+
 export async function getMessages(
   page: number,
   search: string,
+  filter: MessageFilter = "all",
 ): Promise<MessagesPage> {
   try {
     const response = await api.get<MessagesResponse>("/messages", {
-      params: { page, ...(search ? { search } : {}) },
+      params: {
+        page,
+        ...(search ? { search } : {}),
+        ...(filter !== "all" ? { filter } : {}),
+      },
     });
 
     return response.data.data;

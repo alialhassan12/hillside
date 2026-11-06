@@ -1,10 +1,39 @@
-import { useMutation } from "@tanstack/react-query";
-import { addAdmin, editAdmin } from "../services/adminUserApi";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  addAdmin,
+  deleteAdmin,
+  editAdmin,
+  getAdmins,
+} from "../services/adminUserApi";
+
+export function useAdmins() {
+  return useQuery({
+    queryKey: ["admins"],
+    queryFn: getAdmins,
+  });
+}
+
+function useAdminsMutation<TData>(
+  mutationFn: (data: TData) => Promise<unknown>,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admins"] });
+    },
+  });
+}
 
 export function useAddAdmin() {
-  return useMutation({ mutationFn: addAdmin });
+  return useAdminsMutation(addAdmin);
 }
 
 export function useEditAdmin() {
-  return useMutation({ mutationFn: editAdmin });
+  return useAdminsMutation(editAdmin);
+}
+
+export function useDeleteAdmin() {
+  return useAdminsMutation(deleteAdmin);
 }

@@ -11,6 +11,10 @@ import {
   secondaryButtonClass,
   selectedRowClass,
   skeletonClass,
+  tabClass,
+  tabListClass,
+  activeTabClass,
+  inactiveTabClass,
 } from "../../components/admin/adminClasses";
 import {
   useChangeMessageStatus,
@@ -19,6 +23,13 @@ import {
 } from "../../hooks/useMessages";
 import { getErrorMessage } from "../../lib/apiErrors";
 import type { Message } from "../../types/message";
+import type { MessageFilter } from "../../services/messageApi";
+
+const filters: { value: MessageFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "unread", label: "Unread" },
+  { value: "read", label: "Read" },
+];
 
 const disabledClass = "disabled:cursor-not-allowed disabled:opacity-50";
 const pageButtonClass = `cursor-pointer rounded-lg border border-stone-200 px-3 py-1.5 text-stone-700 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-400 disabled:hover:bg-transparent`;
@@ -36,6 +47,7 @@ function formatDateTime(value: string) {
 
 export default function MessagesPage() {
   const [page, setPage] = useState(1);
+  const [filter, setFilter] = useState<MessageFilter>("all");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -53,7 +65,11 @@ export default function MessagesPage() {
     return () => clearTimeout(timer);
   }, [searchInput, search]);
 
-  const { data, isPending, isError, isFetching } = useMessages(page, search);
+  const { data, isPending, isError, isFetching } = useMessages(
+    page,
+    search,
+    filter,
+  );
   const changeStatus = useChangeMessageStatus();
   const deleteMessage = useDeleteMessage();
 
@@ -106,9 +122,33 @@ export default function MessagesPage() {
               </h2>
               {data && data.total > 0 && (
                 <span className="text-sm text-stone-500 tabular-nums">
-                  {data.total} total
+                  {data.total} {filter === "all" ? "total" : filter}
                 </span>
               )}
+            </div>
+
+            <div
+              className={tabListClass.replace("mb-6", "")}
+              role="group"
+              aria-label="Filter messages"
+            >
+              {filters.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    setFilter(option.value);
+                    setPage(1);
+                    setSelectedId(null);
+                  }}
+                  aria-pressed={filter === option.value}
+                  className={`${tabClass} px-3 py-1.5 ${
+                    filter === option.value ? activeTabClass : inactiveTabClass
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
 
             <div className="relative w-full sm:w-64">
@@ -152,7 +192,13 @@ export default function MessagesPage() {
             </p>
           ) : messages.length === 0 ? (
             <p className="p-5 text-sm text-stone-500">
-              {search ? `No messages match "${search}"` : "No messages yet"}
+              {search
+                ? `No ${filter === "all" ? "" : `${filter} `}messages match "${search}"`
+                : filter === "unread"
+                  ? "No unread messages"
+                  : filter === "read"
+                    ? "No read messages"
+                    : "No messages yet"}
             </p>
           ) : (
             <div
