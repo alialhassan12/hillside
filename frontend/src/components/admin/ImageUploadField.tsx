@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useEffect, useId, useState } from "react";
 import { ImageIcon, Upload } from "lucide-react";
 import { labelClass } from "./adminClasses";
 
@@ -10,6 +10,8 @@ interface ImageUploadFieldProps {
   accept?: string;
   multiple?: boolean;
   onFileChange?: (file: File | null) => void;
+  // With `multiple`, receives every chosen file.
+  onFilesChange?: (files: File[]) => void;
   selectedFileName?: string;
 }
 
@@ -21,9 +23,22 @@ export default function ImageUploadField({
   accept = "image/jpeg,image/png,image/webp",
   multiple = false,
   onFileChange,
+  onFilesChange,
   selectedFileName,
 }: ImageUploadFieldProps) {
   const inputId = useId();
+  // Local preview of the chosen file, before it is uploaded.
+  const [localUrl, setLocalUrl] = useState<string | null>(null);
+
+  // Free the previous preview URL when it changes or on unmount.
+  useEffect(() => {
+    return () => {
+      if (localUrl) URL.revokeObjectURL(localUrl);
+    };
+  }, [localUrl]);
+
+  // Show the chosen file while it is selected, otherwise the saved image.
+  const shownSrc = selectedFileName && localUrl ? localUrl : previewSrc;
 
   return (
     <div>
@@ -33,9 +48,9 @@ export default function ImageUploadField({
         <div
           className={`flex w-full shrink-0 items-center justify-center overflow-hidden rounded-lg border border-stone-200 bg-stone-100 sm:w-44 ${previewClassName}`}
         >
-          {previewSrc ? (
+          {shownSrc ? (
             <img
-              src={previewSrc}
+              src={shownSrc}
               alt={`Current ${label.toLowerCase()}`}
               className="h-full w-full object-cover"
             />
@@ -64,7 +79,16 @@ export default function ImageUploadField({
             accept={accept}
             multiple={multiple}
             onChange={(event) => {
-              onFileChange?.(event.target.files?.[0] ?? null);
+              const files = Array.from(event.target.files ?? []);
+              const file = files[0] ?? null;
+              // Only images can be previewed in the <img> box.
+              setLocalUrl(
+                file?.type.startsWith("image/")
+                  ? URL.createObjectURL(file)
+                  : null,
+              );
+              onFileChange?.(file);
+              onFilesChange?.(files);
             }}
             className="sr-only"
           />

@@ -1,9 +1,11 @@
 import { useRef } from "react";
 import { Play, X } from "lucide-react";
+import { useTourVideo } from "../../hooks/useGallery";
 
 export default function TourVideoSection() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { data: video, isPending } = useTourVideo();
 
   function openVideo() {
     dialogRef.current?.showModal();
@@ -25,17 +27,20 @@ export default function TourVideoSection() {
 
   return (
     <section className="relative flex min-h-175 items-center justify-center overflow-hidden bg-forest">
-      <video
-        muted
-        loop
-        playsInline
-        preload="metadata"
-        poster="/images/tour-thumbnail.jpg"
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full object-cover"
-      >
-        <source src="/videos/tour.mp4" type="video/mp4" />
-      </video>
+      {video && (
+        <video
+          key={video.video_url}
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          poster={video.thumbnail_url}
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover"
+        >
+          <source src={video.video_url} />
+        </video>
+      )}
 
       <div className="absolute inset-0 bg-zinc-800/45" />
 
@@ -58,22 +63,31 @@ export default function TourVideoSection() {
             <Play size={23} fill="currentColor" />
           </span>
         </button> */}
-        <button
-          type="button"
-          onClick={openVideo}
-          aria-label="Play hotel tour video"
-          className="group relative flex h-20 w-20 cursor-pointer items-center justify-center rounded-full bg-sand transition-transform hover:scale-105"
-        >
-          <span
-            className="pointer-events-none absolute inset-0 animate-ping rounded-full bg-sand/40 motion-reduce:animate-none"
-            style={{ animationDelay: "1s" }}
-          />
+        {/* Play button only when the API returned a video */}
+        {isPending ? (
+          <p className="font-sans text-sm text-white/80">Loading video...</p>
+        ) : !video ? (
+          <p className="font-sans text-sm text-white/80">
+            The tour video is unavailable right now.
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={openVideo}
+            aria-label="Play hotel tour video"
+            className="group relative flex h-20 w-20 cursor-pointer items-center justify-center rounded-full bg-sand transition-transform hover:scale-105"
+          >
+            <span
+              className="pointer-events-none absolute inset-0 animate-ping rounded-full bg-sand/40 motion-reduce:animate-none"
+              style={{ animationDelay: "1s" }}
+            />
 
-          {/* Main play button */}
-          <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-forest text-sand">
-            <Play size={23} fill="currentColor" />
-          </span>
-        </button>
+            {/* Main play button */}
+            <span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-forest text-sand">
+              <Play size={23} fill="currentColor" />
+            </span>
+          </button>
+        )}
       </div>
 
       {/* Full video popup */}
@@ -98,14 +112,15 @@ export default function TourVideoSection() {
           </button>
 
           <video
+            key={video?.video_url}
             ref={videoRef}
             controls
             playsInline
             preload="none"
-            poster="/images/tour-thumbnail.jpg"
+            poster={video?.thumbnail_url}
             className="w-full"
           >
-            <source src="/videos/tour.mp4" type="video/mp4" />
+            {video && <source src={video.video_url} />}
             Your browser does not support HTML video.
           </video>
         </div>

@@ -1,29 +1,8 @@
 import { useRef, useState } from "react";
 import type { KeyboardEvent, TouchEvent } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-
-// Temporary: the 18 photos shown on the live site (hillside-hotel.com).
-// Replace with the Laravel gallery API once the real photos are uploaded there.
-const galleryImages = [
-  "https://hillside-hotel.com/images/img_6a259cf95f7402.81583771.jpeg",
-  "https://hillside-hotel.com/images/img_6a259d093b42c5.01664599.jpeg",
-  "https://hillside-hotel.com/images/img_6a259d251d72e3.63503449.jpeg",
-  "https://hillside-hotel.com/images/img_6a259d3810c5b1.44242852.jpeg",
-  "https://hillside-hotel.com/images/img_6a259d46a41167.67067248.jpeg",
-  "https://hillside-hotel.com/images/img_6a259d53daadc5.23564029.jpeg",
-  "https://hillside-hotel.com/images/img_6a9d6a78882619.25769893.jpeg",
-  "https://hillside-hotel.com/images/img_6a9d6a866b03e9.02375788.jpeg",
-  "https://hillside-hotel.com/images/img_6a9d6a9e351856.94708288.jpeg",
-  "https://hillside-hotel.com/images/img_6a9d6ad366dad0.72054845.jpeg",
-  "https://hillside-hotel.com/images/img_6a9d6af93da1d2.63609993.jpeg",
-  "https://hillside-hotel.com/images/img_6a9d6b09555059.39661170.jpeg",
-  "https://hillside-hotel.com/images/img_6a9d6b1a78a122.79420521.jpeg",
-  "https://hillside-hotel.com/images/img_6a9d6b26d030d1.61065604.jpeg",
-  "https://hillside-hotel.com/images/img_6a9d6b38dfb9d4.81454455.jpeg",
-  "https://hillside-hotel.com/images/img_6a9d6b539dd7d8.62523818.jpeg",
-  "https://hillside-hotel.com/images/img_6a9d6ba81a42a4.58606854.jpg",
-  "https://hillside-hotel.com/images/img_6a9d6c09cc86a4.45719727.jpeg",
-];
+import { useGalleryImages } from "../../hooks/useGallery";
+import { isNotFound } from "../../lib/apiErrors";
 
 const SWIPE_DISTANCE = 50;
 
@@ -31,6 +10,12 @@ export default function GallerySection() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const touchStartX = useRef<number | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const {
+    data: galleryImages = [],
+    isPending,
+    isError,
+    error,
+  } = useGalleryImages();
 
   const total = galleryImages.length;
 
@@ -80,11 +65,29 @@ export default function GallerySection() {
     }
   }
 
+  // The API answers 404 when the gallery is empty.
+  if (isPending || isError || total === 0) {
+    return (
+      <section aria-label="Hotel gallery" className="mb-12 px-6">
+        <p
+          role={isError && !isNotFound(error) ? "alert" : undefined}
+          className="py-12 text-center text-body"
+        >
+          {isPending
+            ? "Loading gallery..."
+            : isError && !isNotFound(error)
+              ? "The gallery could not be loaded right now."
+              : "No gallery photos yet."}
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section aria-label="Hotel gallery" className="mb-12 px-6">
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
         {galleryImages.map((image, index) => (
-          <li key={image}>
+          <li key={image.id}>
             <button
               type="button"
               onClick={() => openImage(index)}
@@ -92,7 +95,7 @@ export default function GallerySection() {
               className="group block h-80 w-full cursor-pointer overflow-hidden rounded-[10px] bg-forest/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
             >
               <img
-                src={image}
+                src={image.path_url}
                 alt={`Hillside Hotel photo ${index + 1} of ${total}`}
                 loading="lazy"
                 decoding="async"
@@ -120,7 +123,7 @@ export default function GallerySection() {
       >
         {selectedIndex !== null && (
           <img
-            src={galleryImages[selectedIndex]}
+            src={galleryImages[selectedIndex]?.path_url}
             alt={`Hillside Hotel photo ${selectedIndex + 1} of ${total}`}
             className="max-h-[80dvh] max-w-[90vw] rounded-[10px] object-contain"
           />

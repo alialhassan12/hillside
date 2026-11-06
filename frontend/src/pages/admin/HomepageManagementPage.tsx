@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { Save } from "lucide-react";
-import { isAxiosError } from "axios";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
 import ImageUploadField from "../../components/admin/ImageUploadField";
 import {
@@ -23,14 +22,23 @@ import { toast } from "sonner";
 import { useAbout, useUpdateAbout } from "../../hooks/useAbout";
 import { useAboutStats, useUpdateAboutStat } from "../../hooks/useAboutStats";
 import type { About } from "../../types/about";
+import {
+  getErrorMessage,
+  getValidationErrors,
+  isTooLarge,
+} from "../../lib/apiErrors";
 
 const tabs = ["Hero", "About Us", "Highlights"] as const;
 
 type Tab = (typeof tabs)[number];
 
 const heroSchema = z.object({
-  title: z.string().trim().min(1, "Title is required"),
-  subTitle: z.string().trim().min(1, "Subtitle is required"),
+  title: z.string().trim().min(1, "Title is required").max(255, "Title is too long"),
+  subTitle: z
+    .string()
+    .trim()
+    .min(1, "Subtitle is required")
+    .max(255, "Subtitle is too long"),
 });
 
 type HeroFormValues = z.infer<typeof heroSchema>;
@@ -65,33 +73,14 @@ type HighlightsFormValues = z.infer<typeof highlightsSchema>;
 const errorTextClass = "mt-1 text-sm text-red-600";
 const disabledClass = "disabled:cursor-not-allowed disabled:opacity-50";
 
-function getValidationErrors(error: unknown): Record<string, string[]> | null {
-  if (isAxiosError(error) && error.response?.status === 422) {
-    return error.response.data?.errors ?? null;
-  }
-  return null;
-}
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  if (
-    isAxiosError(error) &&
-    typeof error.response?.data?.message === "string"
-  ) {
-    return error.response.data.message;
-  }
-  return fallback;
-}
-
-// Laravel limits are in kilobytes (about image max:2048, icon max:1048).
-function isTooLarge(file: File | null, maxKb: number) {
-  return file !== null && file.size > maxKb * 1024;
-}
-
 export default function HomepageManagementPage() {
   const [activeTab, setActiveTab] = useState<Tab>("Hero");
   const { data: hero, isPending, isError } = useHero();
   const updateHero = useUpdateHero();
   const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
+  const [heroImageError, setHeroImageError] = useState("");
+  // Changing the key remounts the file input so it clears.
+  const [heroFileKey, setHeroFileKey] = useState(0);
 
   const {
     data: about = [],
@@ -123,6 +112,13 @@ export default function HomepageManagementPage() {
   }, [hero, reset]);
 
   async function onSubmitHero(values: HeroFormValues) {
+    // Laravel: hero image max:2048 (KB).
+    if (isTooLarge(heroImageFile, 2048)) {
+      setHeroImageError("Image must be 2 MB or smaller");
+      return;
+    }
+    setHeroImageError("");
+
     try {
       await updateHero.mutateAsync({
         title: values.title,
@@ -131,6 +127,7 @@ export default function HomepageManagementPage() {
       });
 
       setHeroImageFile(null);
+      setHeroFileKey((key) => key + 1);
       toast.success("Hero updated successfully");
     } catch (error) {
       const fieldErrors = getValidationErrors(error);
@@ -138,10 +135,8 @@ export default function HomepageManagementPage() {
         setError("title", { message: fieldErrors.title[0] });
       if (fieldErrors?.subTitle)
         setError("subTitle", { message: fieldErrors.subTitle[0] });
-      toast.error(
-        fieldErrors?.image?.[0] ??
-          getErrorMessage(error, "Failed to update hero"),
-      );
+      if (fieldErrors?.image) setHeroImageError(fieldErrors.image[0]);
+      toast.error(getErrorMessage(error, "Failed to update hero"));
     }
   }
 
@@ -157,7 +152,12 @@ export default function HomepageManagementPage() {
           <button
             key={tab}
             type="button"
-            onClick={() => setActiveTab(tab)}
+            onClick={() => {
+              setActiveTab(tab);
+              // The hero file input unmounts, so forget its file too.
+              setHeroImageFile(null);
+              setHeroImageError("");
+            }}
             aria-pressed={activeTab === tab}
             className={`${tabClass} ${
               activeTab === tab ? activeTabClass : inactiveTabClass
@@ -212,13 +212,21 @@ export default function HomepageManagementPage() {
                 )}
               </div>
 
-              <ImageUploadField
-                label="Background image"
-                hint="JPG, PNG or WebP, wide landscape photo"
-                previewSrc={hero.image_url}
-                onFileChange={setHeroImageFile}
-                selectedFileName={heroImageFile?.name}
-              />
+              <div>
+                <ImageUploadField
+                  key={heroFileKey}
+                  label="Background image"
+                  hint="JPG, PNG or WebP, wide landscape photo, up to 2 MB"
+                  previewSrc={hero.image_url}
+                  onFileChange={setHeroImageFile}
+                  selectedFileName={heroImageFile?.name}
+                />
+                {heroImageError && (
+                  <p role="alert" className={errorTextClass}>
+                    {heroImageError}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end border-t border-stone-200 px-5 py-4">
@@ -263,6 +271,8 @@ function AboutCardForm({ item, number }: { item: About; number: number }) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [iconFile, setIconFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState("");
+  // Changing the key remounts the file inputs so they clear.
+  const [fileInputKey, setFileInputKey] = useState(0);
 
   const values = useMemo(
     () => ({ title: item.title, text: item.text }),
@@ -302,6 +312,7 @@ function AboutCardForm({ item, number }: { item: About; number: number }) {
 
       setImageFile(null);
       setIconFile(null);
+      setFileInputKey((key) => key + 1);
       toast.success(`Feature card ${number} updated`);
     } catch (error) {
       const fieldErrors = getValidationErrors(error);
@@ -356,6 +367,7 @@ function AboutCardForm({ item, number }: { item: About; number: number }) {
 
         <div className="space-y-5">
           <ImageUploadField
+            key={`image-${fileInputKey}`}
             label="Image"
             hint="JPG, PNG or WebP, up to 2 MB"
             previewSrc={item.image_url}
@@ -364,6 +376,7 @@ function AboutCardForm({ item, number }: { item: About; number: number }) {
           />
 
           <ImageUploadField
+            key={`icon-${fileInputKey}`}
             label="Icon"
             hint="PNG, SVG or WebP, up to 1 MB"
             previewSrc={item.icon_url}
