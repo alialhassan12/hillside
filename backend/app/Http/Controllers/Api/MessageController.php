@@ -27,6 +27,7 @@ class MessageController extends Controller
 
     public function getMessages(){
         $search=request()->query('search','all');
+        $filter=request()->query('filter','all');
         
         $messages=Message::when($search !== "all", function ($query) use ($search) {
                 $query->where('name','like',"%$search%")
@@ -34,6 +35,9 @@ class MessageController extends Controller
                     ->orWhere('message','like',"%$search%")
                     ->orWhere('subject','like',"%$search%")
                     ->orWhere('phone','like',"%$search%");
+            })
+            ->when($filter !== "all", function ($query) use ($filter) {
+                $query->where('status',$filter);
             })
             ->orderBy('created_at','desc')
             ->paginate(10);
