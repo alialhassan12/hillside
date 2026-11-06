@@ -17,70 +17,81 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::middleware('throttle:public-form')->post('/login',[AuthConreoller::class,'login']);
-Route::post('/logout',[AuthConreoller::class,'logout']);
-Route::middleware('throttle:public-form')->post('/add-admin',[AuthConreoller::class,'addUser']);
 
-Route::post('/hero',[HeroController::class,'store']);
+
+Route::middleware('auth:sanctum')->group(function(){
+    Route::post('/logout',[AuthConreoller::class,'logout']);
+    Route::middleware('throttle:public-form')->post('/add-admin',[AuthConreoller::class,'addUser']);
+
+    Route::post('/hero',[HeroController::class,'store']);
+    Route::put('/hero/update',[HeroController::class,'update']);
+    
+    Route::post("/about",[AboutController::class,'store']);
+    Route::put("/about/update",[AboutController::class,'update']);
+    
+    Route::post("/about-stats",[AboutStatsController::class,'store']);
+    Route::put("/about-stats/update",[AboutStatsController::class,'update']);
+
+    Route::post("/contact",[ContactController::class,'store']);
+    Route::put("/contact/update",[ContactController::class,'update']);
+    Route::delete("/contact/delete/{id}",[ContactController::class,'delete']);
+    
+    Route::post("/company/address",[CompanyController::class,'storeAddress']);
+    Route::put("/company/address/update",[CompanyController::class,'updateAddress']);
+    Route::post("/company/contact-banner",[CompanyController::class,'storeContactBanner']);
+    Route::put("/company/contact-banner/update",[CompanyController::class,'updateContactBanner']);
+    Route::post("/company/services-banner",[CompanyController::class,'storeServicesBanner']);
+    Route::put("/company/services-banner/update",[CompanyController::class,'updateServicesBanner']);
+
+    Route::post("/services",[ServicesController::class,'store']);
+    Route::put("/services/update",[ServicesController::class,'update']);
+    Route::delete("/services/delete/{id}",[ServicesController::class,'delete']);
+
+    Route::post("/services/details",[ServiceDetailsController::class,'store']);
+    Route::put("/services/details/update",[ServiceDetailsController::class,'update']);
+    Route::delete("/services/details/delete/{id}",[ServiceDetailsController::class,'delete']);
+    
+    Route::post("/gallery/images",[GalleryController::class,'storeImage']);
+    Route::delete("/gallery/images/delete/{id}",[GalleryController::class,'delete']);
+    Route::post("/gallery/video",[GalleryController::class,'storeVideo']);
+    Route::put("/gallery/video/update",[GalleryController::class,'updateVideo']);
+    Route::put("/gallery/video/thumbnail/update",[GalleryController::class,'updateVideoThumbnail']);
+
+    Route::get("/messages",[MessageController::class,'getMessages']);
+    Route::put("/messages/status/change",[MessageController::class,'changeStatus']);
+    Route::delete("/messages/delete/{id}",[MessageController::class,'delete']);
+
+    Route::get("/testimonials",[TestimonialsController::class,'getTestimonials']);
+    Route::put("/testimonials/status/change",[TestimonialsController::class,'changeStatus']);
+    Route::put("/testimonials/visibility/change",[TestimonialsController::class,'changeVisibility']);
+
+    Route::get("/dashboard",[DashboardController::class,'dashboardData']);
+});
+
 Route::get('/hero',[HeroController::class,'getHero']);
 
-Route::put('/hero/update',[HeroController::class,'update']);
-
-Route::post("/about",[AboutController::class,'store']);
 Route::get("/about",[AboutController::class,'getAbouts']);
-Route::put("/about/update",[AboutController::class,'update']);
 
-Route::post("/about-stats",[AboutStatsController::class,'store']);
 Route::get("/about-stats",[AboutStatsController::class,'getAboutStats']);
-Route::put("/about-stats/update",[AboutStatsController::class,'update']);
 
-
-Route::post("/contact",[ContactController::class,'store']);
 Route::get("/contact",[ContactController::class,'getContacts']);
-Route::put("/contact/update",[ContactController::class,'update']);
-Route::delete("/contact/delete/{id}",[ContactController::class,'delete']);
 
-Route::post("/company/address",[CompanyController::class,'storeAddress']);
 Route::get("/company/address",[CompanyController::class,'getAddress']);
-Route::put("/company/address/update",[CompanyController::class,'updateAddress']);
 
-Route::post("/company/contact-banner",[CompanyController::class,'storeContactBanner']);
 Route::get("/company/contact-banner",[CompanyController::class,'getContactBanner']);
-Route::put("/company/contact-banner/update",[CompanyController::class,'updateContactBanner']);
 
-Route::post("/company/services-banner",[CompanyController::class,'storeServicesBanner']);
 Route::get("/company/services-banner",[CompanyController::class,'getServicesBanner']);
-Route::put("/company/services-banner/update",[CompanyController::class,'updateServicesBanner']);
 
-Route::post("/services",[ServicesController::class,'store']);
 Route::get("/services",[ServicesController::class,'getServices']);
-Route::put("/services/update",[ServicesController::class,'update']);
-Route::delete("/services/delete/{id}",[ServicesController::class,'delete']);
 
-Route::post("/services/details",[ServiceDetailsController::class,'store']);
 Route::get("/services/details/{id}",[ServiceDetailsController::class,'getServiceDetails']);
-Route::put("/services/details/update",[ServiceDetailsController::class,'update']);
-Route::delete("/services/details/delete/{id}",[ServiceDetailsController::class,'delete']);
 
-Route::post("/gallery/images",[GalleryController::class,'storeImage']);
 Route::get("/gallery/images",[GalleryController::class,'getGallery']);
-Route::delete("/gallery/images/delete/{id}",[GalleryController::class,'delete']);
 
-Route::post("/gallery/video",[GalleryController::class,'storeVideo']);
 Route::get("/gallery/video",[GalleryController::class,'getVideo']);
-Route::put("/gallery/video/update",[GalleryController::class,'updateVideo']);
-Route::put("/gallery/video/thumbnail/update",[GalleryController::class,'updateVideoThumbnail']);
 
 Route::middleware('throttle:public-form')->post("/messages/send",[MessageController::class,'send']);
-Route::get("/messages",[MessageController::class,'getMessages']);
-Route::put("/messages/status/change",[MessageController::class,'changeStatus']);
-Route::delete("/messages/delete/{id}",[MessageController::class,'delete']);
-
-Route::get("/footer",[ContactController::class,'fetchFooterData']);
 
 Route::middleware('throttle:public-form')->post("/feedback/send",[TestimonialsController::class,'send']);
-Route::get("/testimonials",[TestimonialsController::class,'getTestimonials']);
-Route::put("/testimonials/status/change",[TestimonialsController::class,'changeStatus']);
-Route::put("/testimonials/visibility/change",[TestimonialsController::class,'changeVisibility']);
 
-
-Route::get("/dashboard",[DashboardController::class,'dashboardData']);
+Route::get("/footer",[ContactController::class,'fetchFooterData']);
