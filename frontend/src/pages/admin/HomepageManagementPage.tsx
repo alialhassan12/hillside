@@ -268,15 +268,19 @@ export default function HomepageManagementPage() {
         ))}
 
       {activeTab === "About Us" && (
-        <div className="space-y-6">
+        <div className="grid gap-6 xl:grid-cols-2">
           {isAboutPending ? (
-            <div role="status" aria-label="Loading About Us cards" className="space-y-6">
+            <div
+              role="status"
+              aria-label="Loading About Us cards"
+              className="grid gap-6 xl:col-span-2 xl:grid-cols-2"
+            >
               {[0, 1].map((card) => (
                 <div key={card} className={cardClass}>
                   <div className={cardHeaderClass}>
               <div className={`${skeletonClass} h-5 w-32`} />
             </div>
-                  <div className="grid gap-5 p-5 lg:grid-cols-2">
+                  <div className="space-y-5 p-5">
                     <div className="space-y-5">
                       <div>
                 <div className={`${skeletonClass} mb-2 h-4 w-20`} />
@@ -311,11 +315,13 @@ export default function HomepageManagementPage() {
               ))}
             </div>
           ) : isAboutError ? (
-            <p role="alert" className="text-sm text-red-600">
+            <p role="alert" className="text-sm text-red-600 xl:col-span-2">
               Failed to load About Us cards
             </p>
           ) : about.length === 0 ? (
-            <p className="text-sm text-stone-500">No About Us cards found</p>
+            <p className="text-sm text-stone-500 xl:col-span-2">
+              No About Us cards found
+            </p>
           ) : (
             about.map((item, index) => (
               <AboutCardForm key={item.id} item={item} number={index + 1} />
@@ -392,12 +398,15 @@ function AboutCardForm({ item, number }: { item: About; number: number }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className={cardClass}>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className={`${cardClass} flex flex-col`}
+    >
       <div className={cardHeaderClass}>
         <h2 className={cardTitleClass}>Feature card {number}</h2>
       </div>
 
-      <div className="grid gap-5 p-5 lg:grid-cols-2">
+      <div className="flex-1 space-y-5 p-5">
         <div className="space-y-5">
           <div>
             <label htmlFor={`about-title-${item.id}`} className={labelClass}>

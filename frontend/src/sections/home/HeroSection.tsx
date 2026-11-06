@@ -6,7 +6,7 @@ export default function HeroSection() {
 
   if (isPending) {
     return (
-      <section className="flex min-h-screen items-center justify-center bg-ink">
+      <section className="flex min-h-screen items-center justify-center bg-forest">
         <div
           role="status"
           aria-label="Loading hotel information"
@@ -25,7 +25,7 @@ export default function HeroSection() {
 
   if (isError) {
     return (
-      <section className="flex min-h-screen items-center justify-center bg-ink">
+      <section className="flex min-h-screen items-center justify-center bg-forest">
         <p className="text-white">Unable to load hotel information.</p>
       </section>
     );
@@ -33,7 +33,7 @@ export default function HeroSection() {
 
   return (
     <section
-      className="relative flex min-h-screen items-center justify-center bg-cover bg-center bg-scroll lg:bg-fixed"
+      className="relative flex min-h-screen items-center justify-center bg-forest bg-cover bg-center bg-scroll lg:bg-fixed"
       style={{ backgroundImage: `url("${hero.image_url}")` }}
     >
       <div className="absolute inset-0 bg-ink/50" />
