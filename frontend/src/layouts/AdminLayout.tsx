@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router";
+import {
+  Link,
+  Navigate,
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { clearSession, getToken, getUsername } from "../lib/auth";
+import { logout } from "../services/authApi";
 import {
   ConciergeBell,
   ExternalLink,
@@ -59,7 +69,10 @@ export default function AdminLayout() {
   // Mobile: is the slide-in sidebar open? Desktop: is it collapsed to icons?
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const { pathname } = useLocation();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { pathname, search } = useLocation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // Find the section and page that match the current URL for the header.
   const currentSection = navSections.find((section) =>
@@ -72,6 +85,29 @@ export default function AdminLayout() {
   // On desktop, hide text visually when collapsed but keep it for screen readers.
   const hiddenWhenCollapsed = collapsed ? "lg:sr-only" : "";
   const centeredWhenCollapsed = collapsed ? "lg:justify-center lg:px-0" : "";
+
+  // Frontend guard only: real protection must come from the backend.
+  if (!getToken()) {
+    return (
+      <Navigate to="/admin/login" replace state={{ from: pathname + search }} />
+    );
+  }
+
+  const username = getUsername() || "Admin";
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      // Revoke the token on the server; log out locally even if this fails.
+      await logout();
+    } catch {
+      // Ignored on purpose.
+    }
+    clearSession();
+    // Drop cached admin data (messages, testimonials) from memory.
+    queryClient.clear();
+    navigate("/admin/login", { replace: true });
+  }
 
   return (
     <div className="min-h-screen bg-stone-50 font-sans text-stone-700">
@@ -232,26 +268,24 @@ export default function AdminLayout() {
             </ol>
           </nav>
 
-          <span className="hidden text-xs text-stone-500 md:inline">
-            UI preview, actions not connected
-          </span>
-
           <div className="flex items-center gap-3">
             <span
               aria-hidden="true"
               className="flex h-9 w-9 items-center justify-center rounded-full bg-forest text-sm font-semibold text-gold-bright"
             >
-              A
+              {username.charAt(0).toUpperCase()}
             </span>
             <span className="hidden text-sm font-medium text-stone-900 sm:block">
-              Admin
+              {username}
             </span>
 
             <button
               type="button"
-              aria-label="Log out (not connected yet)"
-              title="Not connected yet"
-              className="cursor-pointer rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              aria-label="Log out"
+              title="Log out"
+              className="cursor-pointer rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <LogOut size={18} />
             </button>
