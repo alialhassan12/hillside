@@ -67,13 +67,14 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::delete("/messages/delete/{id}",[MessageController::class,'delete']);
 
     Route::get("/testimonials",[TestimonialsController::class,'getTestimonials']);
-    Route::get("/testimonials/public",[TestimonialsController::class,'getPublicTestimonials']);
     Route::put("/testimonials/status/change",[TestimonialsController::class,'changeStatus']);
     Route::put("/testimonials/visibility/change",[TestimonialsController::class,'changeVisibility']);
     Route::delete("/testimonials/delete/{id}",[TestimonialsController::class,'deleteTestimonial']);
-
+    
     Route::get("/dashboard",[DashboardController::class,'dashboardData']);
 });
+    
+Route::get("/testimonials/public",[TestimonialsController::class,'getPublicTestimonials']);
 
 Route::get('/hero',[HeroController::class,'getHero']);
 
