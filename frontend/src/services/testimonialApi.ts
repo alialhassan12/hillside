@@ -1,6 +1,7 @@
 import { api } from "../lib/api";
 import { isNotFound } from "../lib/apiErrors";
 import type {
+  Testimonial,
   TestimonialStatus,
   TestimonialsPage,
   TestimonialsResponse,
@@ -67,6 +68,28 @@ export async function getTestimonials(
   }
 }
 
+// Safety cap: at most this many API pages (10 items each).
+const MAX_API_PAGES = 20;
+
+// All testimonials matching a status/search/visibility, newest first.
+// The admin page shows them 6 at a time.
+export async function getAllTestimonials(
+  filters: Omit<TestimonialFilters, "page">,
+): Promise<Testimonial[]> {
+  const first = await getTestimonials({ ...filters, page: 1 });
+  const lastPage = Math.min(first.last_page, MAX_API_PAGES);
+
+  const rest = await Promise.all(
+    Array.from({ length: lastPage - 1 }, (_, index) =>
+      getTestimonials({ ...filters, page: index + 2 }),
+    ),
+  );
+
+  return [first, ...rest]
+    .flatMap((page) => page.data)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+}
+
 export async function changeTestimonialStatus(data: {
   id: string;
   status: TestimonialStatus;
@@ -86,28 +109,32 @@ export async function changeTestimonialVisibility(data: {
   return response.data;
 }
 
-// Safety cap for the public carousel: at most this many pages (10 each).
-const PUBLIC_MAX_PAGES = 5;
+// Public website: GET /api/testimonials/public returns only approved and
+// shown testimonials (not paginated), so visitors never see the rest.
+export async function getPublicTestimonials(): Promise<Testimonial[]> {
+  try {
+    const response = await api.get<{ message: string; data: Testimonial[] }>(
+      "/testimonials/public",
+    );
 
-// Public website: only approved AND visible feedback. Both filters are
-// always sent, so pending, rejected or hidden feedback is never fetched.
-// Loads page 1, then any further pages in parallel.
-export async function getPublicTestimonials() {
-  const filters = { status: "approved", search: "", visibility: 1 } as const;
+    return (
+      response.data.data
+        // Extra guard on top of the server filter.
+        .filter((item) => item.status === "approved" && item.is_shown)
+        // Oldest first, so the carousel order stays the same.
+        .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    );
+  } catch (error) {
+    if (isNotFound(error)) return [];
+    throw error;
+  }
+}
 
-  const first = await getTestimonials({ ...filters, page: 1 });
-  const lastPage = Math.min(first.last_page, PUBLIC_MAX_PAGES);
-
-  const rest = await Promise.all(
-    Array.from({ length: lastPage - 1 }, (_, index) =>
-      getTestimonials({ ...filters, page: index + 2 }),
-    ),
+// Only rejected testimonials can be deleted (backend rule).
+export async function deleteTestimonial(id: string) {
+  const response = await api.delete(
+    `/testimonials/delete/${encodeURIComponent(id)}`,
   );
 
-  return [first, ...rest]
-    .flatMap((page) => page.data)
-    // Extra guard on top of the server filters.
-    .filter((item) => item.status === "approved" && item.is_shown)
-    // Laravel returns no fixed order; keep the carousel stable.
-    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  return response.data;
 }

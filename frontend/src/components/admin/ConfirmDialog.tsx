@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, type LucideIcon } from "lucide-react";
 import { secondaryButtonClass } from "./adminClasses";
 import { getErrorMessage } from "../../lib/apiErrors";
 
@@ -9,18 +9,24 @@ interface ConfirmDialogProps {
   title: string;
   description: ReactNode;
   confirmLabel?: string;
+  // Button text while the action runs, e.g. "Rejecting...".
+  workingLabel?: string;
+  icon?: LucideIcon;
   // Runs the delete. Throwing keeps the dialog open and shows the error.
   onConfirm: () => Promise<void>;
   // Called after cancel, Escape, backdrop click or a successful confirm.
   onClose: () => void;
 }
 
-// Native <dialog> confirmation for destructive admin actions.
+// Native <dialog> confirmation for destructive admin actions
+// (deleting, rejecting). Used instead of window.confirm everywhere.
 export default function ConfirmDialog({
   open,
   title,
   description,
   confirmLabel = "Delete",
+  workingLabel = "Deleting...",
+  icon: Icon = Trash2,
   onConfirm,
   onClose,
 }: ConfirmDialogProps) {
@@ -86,7 +92,7 @@ export default function ConfirmDialog({
     >
       <div className="flex gap-4 p-5">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
-          <Trash2 size={18} aria-hidden="true" />
+          <Icon size={18} aria-hidden="true" />
         </span>
 
         <div className="min-w-0 flex-1">
@@ -121,7 +127,7 @@ export default function ConfirmDialog({
           disabled={isWorking}
           className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isWorking ? "Deleting..." : confirmLabel}
+          {isWorking ? workingLabel : confirmLabel}
         </button>
       </div>
     </dialog>

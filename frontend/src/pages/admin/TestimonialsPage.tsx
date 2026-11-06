@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
 import {
   Check,
-  Eye,
-  EyeOff,
   Quote,
   RotateCcw,
+  Trash2,
   Search,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
+import ConfirmDialog from "../../components/admin/ConfirmDialog";
 import {
   activeTabClass,
   cardClass,
+  deleteButtonClass,
   inactiveTabClass,
   inputClass,
   primaryButtonClass,
@@ -24,6 +25,7 @@ import {
 import {
   useChangeTestimonialStatus,
   useChangeTestimonialVisibility,
+  useDeleteTestimonial,
   useTestimonials,
 } from "../../hooks/useTestimonials";
 import { getErrorMessage } from "../../lib/apiErrors";
@@ -39,6 +41,8 @@ const tabs: { status: TestimonialStatus; label: string }[] = [
 type VisibilityFilter = "" | "1" | "0";
 
 const smallButtonClass = "px-3 py-2";
+// Testimonials per page in the admin grid.
+const PAGE_SIZE = 6;
 const disabledClass = "disabled:cursor-not-allowed disabled:opacity-50";
 const pageButtonClass = `cursor-pointer rounded-lg border border-stone-200 px-3 py-1.5 text-stone-700 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-400 disabled:hover:bg-transparent`;
 
@@ -57,6 +61,8 @@ export default function TestimonialsPage() {
   const [visibility, setVisibility] = useState<VisibilityFilter>("");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [toReject, setToReject] = useState<Testimonial | null>(null);
+  const [toDelete, setToDelete] = useState<Testimonial | null>(null);
 
   const page = pages[status];
   const setPage = (next: number) =>
@@ -74,22 +80,30 @@ export default function TestimonialsPage() {
     return () => clearTimeout(timer);
   }, [searchInput, search]);
 
-  const { data, isPending, isError, isFetching } = useTestimonials({
+  const {
+    data: allTestimonials = [],
+    isPending,
+    isError,
+    isFetching,
+  } = useTestimonials({
     status,
     search,
-    page,
     ...(status === "approved" && visibility !== ""
       ? { visibility: Number(visibility) as 0 | 1 }
       : {}),
   });
   const changeStatus = useChangeTestimonialStatus();
   const changeVisibility = useChangeTestimonialVisibility();
+  const deleteTestimonial = useDeleteTestimonial();
 
-  // Laravel returns no fixed order; show newest first on each page.
-  const testimonials = [...(data?.data ?? [])].sort((a, b) =>
-    b.created_at.localeCompare(a.created_at),
+  // 6 per page (two rows of three), newest first.
+  const total = allTestimonials.length;
+  const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const currentPage = Math.min(page, lastPage);
+  const testimonials = allTestimonials.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
   );
-  const lastPage = data?.last_page ?? 1;
 
   // Which card has a request running, to disable only its buttons.
   const busyId = changeStatus.isPending
@@ -101,30 +115,39 @@ export default function TestimonialsPage() {
   // The card leaves this tab after a status change; if it was the last
   // one on the page, step back so the page is not empty.
   function afterLeavingTab() {
-    if (testimonials.length === 1 && page > 1) setPage(page - 1);
+    if (testimonials.length === 1 && currentPage > 1) {
+      setPage(currentPage - 1);
+    }
+  }
+
+  // Throws on failure, so the reject dialog can stay open with the error.
+  async function changeStatusTo(
+    testimonial: Testimonial,
+    next: TestimonialStatus,
+  ) {
+    await changeStatus.mutateAsync({ id: testimonial.id, status: next });
+    afterLeavingTab();
+    toast.success(
+      next === "approved"
+        ? "Approved. Turn on \"Shown on website\" to publish it."
+        : next === "rejected"
+          ? "Feedback rejected"
+          : "Moved back to pending",
+    );
   }
 
   async function onChangeStatus(
     testimonial: Testimonial,
     next: TestimonialStatus,
   ) {
-    if (
-      next === "rejected" &&
-      !window.confirm(`Reject the feedback from ${testimonial.name}?`)
-    ) {
+    // Rejecting asks first, in our confirmation dialog.
+    if (next === "rejected") {
+      setToReject(testimonial);
       return;
     }
 
     try {
-      await changeStatus.mutateAsync({ id: testimonial.id, status: next });
-      afterLeavingTab();
-      toast.success(
-        next === "approved"
-          ? "Approved. Use Show in the Approved tab to publish it."
-          : next === "rejected"
-            ? "Feedback rejected"
-            : "Moved back to pending",
-      );
+      await changeStatusTo(testimonial, next);
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to update the feedback"));
     }
@@ -313,19 +336,6 @@ export default function TestimonialsPage() {
                   <span className="tabular-nums">
                     {formatDate(testimonial.created_at)}
                   </span>
-                  {testimonial.status === "approved" && (
-                    <span className="inline-flex items-center gap-1.5">
-                      <span
-                        aria-hidden="true"
-                        className={`h-2 w-2 rounded-full ${
-                          testimonial.is_shown ? "bg-green-600" : "bg-stone-300"
-                        }`}
-                      />
-                      {testimonial.is_shown
-                        ? "Shown on website"
-                        : "Hidden from website"}
-                    </span>
-                  )}
                 </div>
 
                 <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-stone-100 pt-3">
@@ -352,33 +362,51 @@ export default function TestimonialsPage() {
                     </>
                   )}
 
-                  {testimonial.status === "approved" && (
-                    <button
-                      type="button"
-                      onClick={() => onToggleVisibility(testimonial)}
-                      disabled={isBusy}
-                      className={`${
-                        testimonial.is_shown
-                          ? secondaryButtonClass
-                          : primaryButtonClass
-                      } ${smallButtonClass} ${disabledClass}`}
-                    >
-                      {testimonial.is_shown ? (
-                        <>
-                          <EyeOff size={16} aria-hidden="true" />
-                          Hide
-                        </>
-                      ) : (
-                        <>
-                          <Eye size={16} aria-hidden="true" />
-                          Show
-                        </>
-                      )}
-                    </button>
-                  )}
+                  {testimonial.status === "approved" && (() => {
+                    // While saving, show the new position straight away.
+                    const isShown =
+                      changeVisibility.isPending &&
+                      changeVisibility.variables?.id === testimonial.id
+                        ? changeVisibility.variables.is_shown
+                        : testimonial.is_shown;
+
+                    return (
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={isShown}
+                        onClick={() => onToggleVisibility(testimonial)}
+                        disabled={isBusy}
+                        className={`mr-auto flex cursor-pointer items-center gap-3 rounded-lg py-1.5 text-sm font-medium text-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ${disabledClass}`}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors duration-200 motion-reduce:transition-none ${
+                            isShown ? "bg-forest" : "bg-stone-300"
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 motion-reduce:transition-none ${
+                              isShown ? "translate-x-5" : "translate-x-0"
+                            }`}
+                          />
+                        </span>
+                        Shown on website
+                      </button>
+                    );
+                  })()}
 
                   {testimonial.status === "rejected" && (
                     <>
+                      <button
+                        type="button"
+                        onClick={() => setToDelete(testimonial)}
+                        disabled={isBusy}
+                        aria-label={`Delete feedback from ${testimonial.name}`}
+                        className={`${deleteButtonClass} mr-auto ${disabledClass}`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
                       <button
                         type="button"
                         onClick={() => onChangeStatus(testimonial, "pending")}
@@ -406,24 +434,24 @@ export default function TestimonialsPage() {
         </ul>
       )}
 
-      {!isPending && !isError && (data?.total ?? 0) > 0 && (
+      {!isPending && !isError && total > PAGE_SIZE && (
         <div className="mt-6 flex items-center justify-between text-sm text-stone-500">
           <span className="tabular-nums">
-            Page {page} of {lastPage} · {data?.total} total
+            Page {currentPage} of {lastPage} · {total} total
           </span>
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setPage(page - 1)}
-              disabled={page <= 1 || isFetching}
+              onClick={() => setPage(currentPage - 1)}
+              disabled={currentPage <= 1}
               className={pageButtonClass}
             >
               Previous
             </button>
             <button
               type="button"
-              onClick={() => setPage(page + 1)}
-              disabled={page >= lastPage || isFetching}
+              onClick={() => setPage(currentPage + 1)}
+              disabled={currentPage >= lastPage}
               className={pageButtonClass}
             >
               Next
@@ -431,6 +459,47 @@ export default function TestimonialsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={toReject !== null}
+        title="Reject this feedback?"
+        description={
+          <>
+            Feedback from{" "}
+            <strong className="font-semibold text-stone-900">
+              {toReject?.name}
+            </strong>{" "}
+            will move to the Rejected tab and won't appear on the website. You
+            can restore it later.
+          </>
+        }
+        confirmLabel="Reject feedback"
+        workingLabel="Rejecting..."
+        icon={X}
+        onConfirm={() => changeStatusTo(toReject!, "rejected")}
+        onClose={() => setToReject(null)}
+      />
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        title="Delete this feedback?"
+        description={
+          <>
+            Feedback from{" "}
+            <strong className="font-semibold text-stone-900">
+              {toDelete?.name}
+            </strong>{" "}
+            will be permanently deleted. This can't be undone.
+          </>
+        }
+        confirmLabel="Delete feedback"
+        onConfirm={async () => {
+          await deleteTestimonial.mutateAsync(toDelete!.id);
+          afterLeavingTab();
+          toast.success("Feedback deleted");
+        }}
+        onClose={() => setToDelete(null)}
+      />
     </>
   );
 }

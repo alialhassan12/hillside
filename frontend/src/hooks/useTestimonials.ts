@@ -7,17 +7,19 @@ import {
 import {
   changeTestimonialStatus,
   changeTestimonialVisibility,
+  deleteTestimonial,
+  getAllTestimonials,
   getPublicTestimonials,
-  getTestimonials,
   sendFeedback,
   type TestimonialFilters,
 } from "../services/testimonialApi";
 
-export function useTestimonials(filters: TestimonialFilters) {
+// Admin list: every match for the filters (paged in the UI).
+export function useTestimonials(filters: Omit<TestimonialFilters, "page">) {
   return useQuery({
-    queryKey: ["testimonials", filters],
-    queryFn: () => getTestimonials(filters),
-    // Keep the current page on screen while the next one loads.
+    queryKey: ["testimonials", "all", filters],
+    queryFn: () => getAllTestimonials(filters),
+    // Keep the current list on screen while new filters load.
     placeholderData: keepPreviousData,
   });
 }
@@ -55,4 +57,8 @@ export function useChangeTestimonialStatus() {
 
 export function useChangeTestimonialVisibility() {
   return useTestimonialsMutation(changeTestimonialVisibility);
+}
+
+export function useDeleteTestimonial() {
+  return useTestimonialsMutation(deleteTestimonial);
 }
