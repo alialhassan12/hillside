@@ -68,6 +68,24 @@ class TestimonialsController extends Controller
         ],200);
     }
 
+    public function getPublicTestimonials(){
+        $testimonials=Testimonial::where('is_shown',true)
+            ->where('status','approved')
+            ->orderBy('created_at','desc')
+            ->get();
+
+        if(!$testimonials){
+            return response()->json([
+                'message'=>'No testimonials found'
+            ],404);
+        }
+
+        return response()->json([
+            'message'=>'Testimonials retrieved successfully',
+            'data'=>$testimonials
+        ],200);
+    }
+
     public function changeStatus(Request $request){
         $validated=$request->validate([
             'id'=>['required','uuid','exists:testimonials,id'],
