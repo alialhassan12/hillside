@@ -60,4 +60,59 @@ class AuthConreoller extends Controller
             'user'=>$user
         ],201);
     }
+
+    public function getUsers(Request $request){
+        
+        $users=User::all();
+
+        return response()->json([
+            'users'=>$users
+        ]);
+    }
+
+    public function deleteUser($id){
+        $user=User::find($id);
+
+        $usersCount=User::count();
+        
+        if($usersCount <= 1){
+            return response()->json([
+                'message'=>'Cannot delete the last user'
+            ],403);
+        }
+        
+        if(!$user){
+            return response()->json([
+                'message'=>'User not found'
+            ],404);
+        }
+
+        $user->delete();
+
+        return response()->json([
+            'message'=>'User deleted successfully'
+        ]);
+    }
+
+    public function editUser(Request $request){
+        $validated=$request->validate([
+            'id'=>['required','uuid','exists:users,id'],
+            'username'=>['sometimes','string','max:255','unique:users,username'],
+            'password'=>['sometimes','string','min:8']
+        ]);
+
+        $user=User::find($validated['id']);
+        if(!$user){
+            return response()->json([
+                'message'=>'User not found'
+            ],404);
+        }
+
+        $user->update($validated);
+
+        return response()->json([
+            'message'=>'User updated successfully',
+            'user'=>$user
+        ]);
+    }
 }

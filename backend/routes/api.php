@@ -22,6 +22,9 @@ Route::middleware('throttle:public-form')->post('/login',[AuthConreoller::class,
 Route::middleware('auth:sanctum')->group(function(){
     Route::post('/logout',[AuthConreoller::class,'logout']);
     Route::middleware('throttle:public-form')->post('/add-admin',[AuthConreoller::class,'addUser']);
+    Route::middleware('throttle:public-form')->put('/edit-admin',[AuthConreoller::class,'editUser']);
+    Route::middleware('throttle:public-form')->delete('/delete-admin/{id}',[AuthConreoller::class,'deleteUser']);
+
 
     Route::post('/hero',[HeroController::class,'store']);
     Route::put('/hero/update',[HeroController::class,'update']);
