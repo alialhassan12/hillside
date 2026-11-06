@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
+import ConfirmDialog from "../../components/admin/ConfirmDialog";
 import ImageUploadField from "../../components/admin/ImageUploadField";
 import {
   cardClass,
@@ -18,6 +19,7 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
   selectedRowClass,
+  skeletonClass,
 } from "../../components/admin/adminClasses";
 import {
   useCreateService,
@@ -53,6 +55,7 @@ export default function ServicesManagementPage() {
 
   // null = the form creates a new service.
   const [editing, setEditing] = useState<Service | null>(null);
+  const [toDelete, setToDelete] = useState<Service | null>(null);
   const [iconFile, setIconFile] = useState<File | null>(null);
   const [iconError, setIconError] = useState("");
   // Changing the key remounts the file input so it clears.
@@ -133,22 +136,12 @@ export default function ServicesManagementPage() {
     }
   }
 
-  async function onDelete(service: Service) {
-    if (
-      !window.confirm(
-        `Delete "${service.name}"? Its service details will no longer be shown.`,
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await deleteService.mutateAsync(service.id);
-      if (editing?.id === service.id) selectEditing(null);
-      toast.success("Service deleted successfully");
-    } catch (deleteError) {
-      toast.error(getErrorMessage(deleteError, "Failed to delete service"));
-    }
+  // Runs from the confirmation dialog; errors stay in the dialog.
+  async function deleteConfirmed() {
+    if (!toDelete) return;
+    await deleteService.mutateAsync(toDelete.id);
+    if (editing?.id === toDelete.id) selectEditing(null);
+    toast.success("Service deleted successfully");
   }
 
   // The API answers 404 when there are no services yet.
@@ -186,7 +179,16 @@ export default function ServicesManagementPage() {
           </div>
 
           {isPending ? (
-            <p className="p-5 text-sm text-stone-500">Loading services...</p>
+            <ul role="status" aria-label="Loading services" className="divide-y divide-stone-100">
+              {[0, 1, 2, 3].map((row) => (
+                <li key={row} className="flex items-center gap-3 px-5 py-3">
+                  <div className={`${skeletonClass} h-10 w-10 shrink-0 rounded-full`} />
+                  <div className={`${skeletonClass} h-4 w-32`} />
+                  <div className={`${skeletonClass} hidden h-4 flex-1 md:block`} />
+                  <div className={`${skeletonClass} ml-auto h-9 w-28 rounded-lg`} />
+                </li>
+              ))}
+            </ul>
           ) : isError && !isNotFound(error) ? (
             <p role="alert" className="p-5 text-sm text-red-600">
               Failed to load services
@@ -268,7 +270,7 @@ export default function ServicesManagementPage() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => onDelete(service)}
+                              onClick={() => setToDelete(service)}
                               disabled={isDeleting}
                               aria-label={`Delete ${service.name}`}
                               className={`${deleteButtonClass} ${disabledClass}`}
@@ -378,6 +380,26 @@ export default function ServicesManagementPage() {
           </div>
         </form>
       </div>
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        title="Delete service?"
+        description={
+          <>
+            <strong className="font-semibold text-stone-900">
+              {toDelete?.name}
+            </strong>{" "}
+            will be removed from the website.{" "}
+            <strong className="font-semibold text-stone-900">
+              All of its service details will be deleted too.
+            </strong>{" "}
+            This can't be undone.
+          </>
+        }
+        confirmLabel="Delete service"
+        onConfirm={deleteConfirmed}
+        onClose={() => setToDelete(null)}
+      />
     </>
   );
 }

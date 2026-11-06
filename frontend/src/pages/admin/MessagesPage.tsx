@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Eye, Mail, MailOpen, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
+import ConfirmDialog from "../../components/admin/ConfirmDialog";
 import {
   cardClass,
   cardHeaderClass,
@@ -9,6 +10,7 @@ import {
   inputClass,
   secondaryButtonClass,
   selectedRowClass,
+  skeletonClass,
 } from "../../components/admin/adminClasses";
 import {
   useChangeMessageStatus,
@@ -37,6 +39,7 @@ export default function MessagesPage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [toDelete, setToDelete] = useState<Message | null>(null);
 
   // Search on the server after the user stops typing.
   useEffect(() => {
@@ -74,18 +77,14 @@ export default function MessagesPage() {
     }
   }
 
-  async function onDelete(message: Message) {
-    if (!window.confirm(`Delete the message from ${message.name}?`)) return;
-
-    try {
-      await deleteMessage.mutateAsync(message.id);
-      setSelectedId(null);
-      // Deleting the last message on a page moves back one page.
-      if (messages.length === 1 && page > 1) setPage(page - 1);
-      toast.success("Message deleted");
-    } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to delete the message"));
-    }
+  // Runs from the confirmation dialog; errors stay in the dialog.
+  async function deleteConfirmed() {
+    if (!toDelete) return;
+    await deleteMessage.mutateAsync(toDelete.id);
+    setSelectedId(null);
+    // Deleting the last message on a page moves back one page.
+    if (messages.length === 1 && page > 1) setPage(page - 1);
+    toast.success("Message deleted");
   }
 
   return (
@@ -133,7 +132,20 @@ export default function MessagesPage() {
           </div>
 
           {isPending ? (
-            <p className="p-5 text-sm text-stone-500">Loading messages...</p>
+            <ul role="status" aria-label="Loading messages" className="divide-y divide-stone-100">
+              {Array.from({ length: 5 }, (_, row) => (
+                <li key={row} className="flex items-center gap-4 px-5 py-3">
+                  <div className="w-36 space-y-2">
+                    <div className={`${skeletonClass} h-4 w-28`} />
+                    <div className={`${skeletonClass} h-3 w-36`} />
+                  </div>
+                  <div className={`${skeletonClass} hidden h-4 flex-1 md:block`} />
+                  <div className={`${skeletonClass} hidden h-4 w-20 sm:block`} />
+                  <div className={`${skeletonClass} h-4 w-14`} />
+                  <div className={`${skeletonClass} ml-auto h-9 w-16 rounded-lg`} />
+                </li>
+              ))}
+            </ul>
           ) : isError ? (
             <p role="alert" className="p-5 text-sm text-red-600">
               Failed to load messages
@@ -332,7 +344,7 @@ export default function MessagesPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => onDelete(selected)}
+                  onClick={() => setToDelete(selected)}
                   disabled={deleteMessage.isPending}
                   className={`${secondaryButtonClass} hover:text-red-600 ${disabledClass}`}
                 >
@@ -344,6 +356,23 @@ export default function MessagesPage() {
           )}
         </article>
       </div>
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        title="Delete message?"
+        description={
+          <>
+            The message{" "}
+            <strong className="font-semibold text-stone-900">
+              "{toDelete?.subject}"
+            </strong>{" "}
+            from {toDelete?.name} will be permanently deleted.
+          </>
+        }
+        confirmLabel="Delete message"
+        onConfirm={deleteConfirmed}
+        onClose={() => setToDelete(null)}
+      />
     </>
   );
 }

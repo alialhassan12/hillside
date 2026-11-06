@@ -19,6 +19,7 @@ import {
   secondaryButtonClass,
   tabClass,
   tabListClass,
+  skeletonClass,
 } from "../../components/admin/adminClasses";
 import {
   useChangeTestimonialStatus,
@@ -227,7 +228,32 @@ export default function TestimonialsPage() {
       </div>
 
       {isPending ? (
-        <p className="text-sm text-stone-500">Loading feedback...</p>
+        <ul
+          role="status"
+          aria-label="Loading feedback"
+          className="grid gap-6 md:grid-cols-2 xl:grid-cols-3"
+        >
+          {[0, 1, 2].map((card) => (
+            <li key={card} className={`${cardClass} p-5`}>
+              <div className="flex items-center gap-3">
+                <div className={`${skeletonClass} h-12 w-12 shrink-0 rounded-full`} />
+                <div className="flex-1 space-y-2">
+                  <div className={`${skeletonClass} h-4 w-28`} />
+                  <div className={`${skeletonClass} h-3 w-20`} />
+                </div>
+              </div>
+              <div className="mt-5 space-y-2">
+                <div className={`${skeletonClass} h-4 w-full`} />
+                <div className={`${skeletonClass} h-4 w-full`} />
+                <div className={`${skeletonClass} h-4 w-2/3`} />
+              </div>
+              <div className="mt-6 flex justify-end gap-2 border-t border-stone-100 pt-3">
+                <div className={`${skeletonClass} h-9 w-24 rounded-lg`} />
+                <div className={`${skeletonClass} h-9 w-24 rounded-lg`} />
+              </div>
+            </li>
+          ))}
+        </ul>
       ) : isError ? (
         <p role="alert" className="text-sm text-red-600">
           Failed to load feedback

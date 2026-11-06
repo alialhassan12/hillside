@@ -13,6 +13,7 @@ import {
   inactiveTabClass,
   tabClass,
   tabListClass,
+  skeletonClass,
 } from "../../components/admin/adminClasses";
 import { useHero, useUpdateHero } from "../../hooks/useHero";
 import { useForm } from "react-hook-form";
@@ -170,7 +171,31 @@ export default function HomepageManagementPage() {
 
       {activeTab === "Hero" &&
         (isPending ? (
-          <p className="text-sm text-stone-500">Loading hero...</p>
+          <div role="status" aria-label="Loading hero" className={cardClass}>
+            <div className={cardHeaderClass}>
+              <div className={`${skeletonClass} h-5 w-32`} />
+            </div>
+            <div className="grid gap-5 p-5">
+              <div>
+                <div className={`${skeletonClass} mb-2 h-4 w-20`} />
+                <div className={`${skeletonClass} h-11 w-full rounded-lg`} />
+              </div>
+              <div>
+                <div className={`${skeletonClass} mb-2 h-4 w-20`} />
+                <div className={`${skeletonClass} h-11 w-full rounded-lg`} />
+              </div>
+              <div>
+                <div className={`${skeletonClass} mb-2 h-4 w-36`} />
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <div className={`${skeletonClass} w-full shrink-0 rounded-lg aspect-video sm:w-44`} />
+                  <div className={`${skeletonClass} h-24 flex-1 rounded-lg`} />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end border-t border-stone-200 px-5 py-4">
+              <div className={`${skeletonClass} h-10 w-32 rounded-lg`} />
+            </div>
+          </div>
         ) : isError || !hero ? (
           <p role="alert" className="text-sm text-red-600">
             Failed to load hero information
@@ -245,7 +270,46 @@ export default function HomepageManagementPage() {
       {activeTab === "About Us" && (
         <div className="space-y-6">
           {isAboutPending ? (
-            <p className="text-sm text-stone-500">Loading About Us cards...</p>
+            <div role="status" aria-label="Loading About Us cards" className="space-y-6">
+              {[0, 1].map((card) => (
+                <div key={card} className={cardClass}>
+                  <div className={cardHeaderClass}>
+              <div className={`${skeletonClass} h-5 w-32`} />
+            </div>
+                  <div className="grid gap-5 p-5 lg:grid-cols-2">
+                    <div className="space-y-5">
+                      <div>
+                <div className={`${skeletonClass} mb-2 h-4 w-20`} />
+                <div className={`${skeletonClass} h-11 w-full rounded-lg`} />
+              </div>
+                      <div>
+                <div className={`${skeletonClass} mb-2 h-4 w-20`} />
+                <div className={`${skeletonClass} h-32 w-full rounded-lg`} />
+              </div>
+                    </div>
+                    <div className="space-y-5">
+                      <div>
+                <div className={`${skeletonClass} mb-2 h-4 w-28`} />
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <div className={`${skeletonClass} w-full shrink-0 rounded-lg aspect-video sm:w-44`} />
+                  <div className={`${skeletonClass} h-24 flex-1 rounded-lg`} />
+                </div>
+              </div>
+                      <div>
+                <div className={`${skeletonClass} mb-2 h-4 w-16`} />
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <div className={`${skeletonClass} w-full shrink-0 rounded-lg aspect-square sm:w-24`} />
+                  <div className={`${skeletonClass} h-24 flex-1 rounded-lg`} />
+                </div>
+              </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end border-t border-stone-200 px-5 py-4">
+              <div className={`${skeletonClass} h-10 w-32 rounded-lg`} />
+            </div>
+                </div>
+              ))}
+            </div>
           ) : isAboutError ? (
             <p role="alert" className="text-sm text-red-600">
               Failed to load About Us cards
@@ -481,7 +545,33 @@ function HighlightsForm() {
   }
 
   if (isPending) {
-    return <p className="text-sm text-stone-500">Loading highlights...</p>;
+    return (
+      <div role="status" aria-label="Loading highlights" className={cardClass}>
+        <div className={cardHeaderClass}>
+          <div className="space-y-2">
+            <div className={`${skeletonClass} h-5 w-32`} />
+            <div className={`${skeletonClass} h-4 w-64`} />
+          </div>
+        </div>
+        <ul className="divide-y divide-stone-100">
+          {[0, 1, 2, 3].map((row) => (
+            <li key={row} className="grid gap-4 p-5 md:grid-cols-[1fr_2fr]">
+              <div>
+                <div className={`${skeletonClass} mb-2 h-4 w-12`} />
+                <div className={`${skeletonClass} h-11 w-full rounded-lg`} />
+              </div>
+              <div>
+                <div className={`${skeletonClass} mb-2 h-4 w-24`} />
+                <div className={`${skeletonClass} h-11 w-full rounded-lg`} />
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="flex justify-end border-t border-stone-200 px-5 py-4">
+              <div className={`${skeletonClass} h-10 w-32 rounded-lg`} />
+            </div>
+      </div>
+    );
   }
 
   if (isError) {

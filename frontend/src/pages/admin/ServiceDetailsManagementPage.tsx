@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
+import ConfirmDialog from "../../components/admin/ConfirmDialog";
 import ImageUploadField from "../../components/admin/ImageUploadField";
 import {
   cardClass,
@@ -17,6 +18,7 @@ import {
   labelClass,
   primaryButtonClass,
   secondaryButtonClass,
+  skeletonClass,
 } from "../../components/admin/adminClasses";
 import { useServices } from "../../hooks/useServices";
 import {
@@ -72,6 +74,7 @@ export default function ServiceDetailsManagementPage() {
 
   // null = the form creates a new detail.
   const [editing, setEditing] = useState<ServiceDetail | null>(null);
+  const [toDelete, setToDelete] = useState<ServiceDetail | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageError, setImageError] = useState("");
   // Changing the key remounts the file input so it clears.
@@ -153,16 +156,12 @@ export default function ServiceDetailsManagementPage() {
     }
   }
 
-  async function onDelete(detail: ServiceDetail) {
-    if (!window.confirm(`Delete "${detail.title}"?`)) return;
-
-    try {
-      await deleteDetail.mutateAsync(detail.id);
-      if (editing?.id === detail.id) selectEditing(null);
-      toast.success("Detail deleted successfully");
-    } catch (deleteError) {
-      toast.error(getErrorMessage(deleteError, "Failed to delete detail"));
-    }
+  // Runs from the confirmation dialog; errors stay in the dialog.
+  async function deleteConfirmed() {
+    if (!toDelete) return;
+    await deleteDetail.mutateAsync(toDelete.id);
+    if (editing?.id === toDelete.id) selectEditing(null);
+    toast.success("Detail deleted successfully");
   }
 
   // The API answers 404 when a service has no details yet.
@@ -194,7 +193,11 @@ export default function ServiceDetailsManagementPage() {
           Service
         </label>
         {isServicesPending ? (
-          <p className="text-sm text-stone-500">Loading services...</p>
+          <div
+            role="status"
+            aria-label="Loading services"
+            className={`${skeletonClass} h-11 w-full rounded-lg sm:max-w-sm`}
+          />
         ) : isServicesError || services.length === 0 ? (
           <p className="text-sm text-stone-500">
             No services found. Add a service first.
@@ -231,7 +234,22 @@ export default function ServiceDetailsManagementPage() {
             </div>
 
             {isDetailsPending ? (
-              <p className="p-5 text-sm text-stone-500">Loading details...</p>
+              <ul
+                role="status"
+                aria-label="Loading service details"
+                className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3"
+              >
+                {[0, 1, 2].map((card) => (
+                  <li key={card} className="overflow-hidden rounded-lg border border-stone-200">
+                    <div className={`${skeletonClass} aspect-square rounded-none`} />
+                    <div className="space-y-2 p-4">
+                      <div className={`${skeletonClass} h-4 w-2/3`} />
+                      <div className={`${skeletonClass} h-4 w-full`} />
+                      <div className={`${skeletonClass} h-4 w-1/2`} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
             ) : isDetailsError && !isNotFound(detailsError) ? (
               <p role="alert" className="p-5 text-sm text-red-600">
                 Failed to load service details
@@ -294,7 +312,7 @@ export default function ServiceDetailsManagementPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => onDelete(detail)}
+                            onClick={() => setToDelete(detail)}
                             disabled={isDeleting}
                             aria-label={`Delete ${detail.title}`}
                             className={`${deleteButtonClass} ${disabledClass}`}
@@ -402,6 +420,23 @@ export default function ServiceDetailsManagementPage() {
           </form>
         </div>
       )}
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        title="Delete service detail?"
+        description={
+          <>
+            <strong className="font-semibold text-stone-900">
+              {toDelete?.title}
+            </strong>{" "}
+            and its image will be removed from this service. This can't be
+            undone.
+          </>
+        }
+        confirmLabel="Delete detail"
+        onConfirm={deleteConfirmed}
+        onClose={() => setToDelete(null)}
+      />
     </>
   );
 }

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { ImageIcon, Save, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
+import ConfirmDialog from "../../components/admin/ConfirmDialog";
 import ImageUploadField from "../../components/admin/ImageUploadField";
 import {
   cardClass,
@@ -13,6 +14,7 @@ import {
   inactiveTabClass,
   tabClass,
   tabListClass,
+  skeletonClass,
 } from "../../components/admin/adminClasses";
 import {
   useDeleteGalleryImage,
@@ -96,6 +98,11 @@ function GalleryImagesTab() {
   const deleteImage = useDeleteGalleryImage();
 
   const [files, setFiles] = useState<File[]>([]);
+  const [toDelete, setToDelete] = useState<{
+    id: string;
+    number: number;
+    url: string;
+  } | null>(null);
   const [uploadError, setUploadError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   // Changing the key remounts the file input so it clears.
@@ -155,15 +162,11 @@ function GalleryImagesTab() {
     setFileInputKey((key) => key + 1);
   }
 
-  async function onDelete(id: string, number: number) {
-    if (!window.confirm(`Delete gallery photo ${number}?`)) return;
-
-    try {
-      await deleteImage.mutateAsync(id);
-      toast.success("Photo deleted");
-    } catch (deleteError) {
-      toast.error(getErrorMessage(deleteError, "Failed to delete photo"));
-    }
+  // Runs from the confirmation dialog; errors stay in the dialog.
+  async function deleteConfirmed() {
+    if (!toDelete) return;
+    await deleteImage.mutateAsync(toDelete.id);
+    toast.success("Photo deleted");
   }
 
   // The API answers 404 when the gallery is empty.
@@ -219,7 +222,15 @@ function GalleryImagesTab() {
         </div>
 
         {isPending ? (
-          <p className="p-5 text-sm text-stone-500">Loading photos...</p>
+          <ul
+            role="status"
+            aria-label="Loading gallery photos"
+            className="grid grid-cols-2 gap-4 p-5 md:grid-cols-3 xl:grid-cols-4"
+          >
+            {Array.from({ length: 8 }, (_, tile) => (
+              <li key={tile} className={`${skeletonClass} aspect-4/3 rounded-lg`} />
+            ))}
+          </ul>
         ) : isError && !isNotFound(error) ? (
           <p role="alert" className="p-5 text-sm text-red-600">
             Failed to load gallery photos
@@ -256,7 +267,13 @@ function GalleryImagesTab() {
 
                   <button
                     type="button"
-                    onClick={() => onDelete(image.id, index + 1)}
+                    onClick={() =>
+                      setToDelete({
+                        id: image.id,
+                        number: index + 1,
+                        url: image.path_url,
+                      })
+                    }
                     disabled={isDeleting}
                     aria-label={`Delete gallery photo ${index + 1}`}
                     className={`absolute top-2 right-2 inline-flex cursor-pointer items-center justify-center rounded-lg bg-white/90 p-2 text-stone-600 shadow-sm transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-red-600 ${disabledClass}`}
@@ -269,6 +286,29 @@ function GalleryImagesTab() {
           </ul>
         )}
       </section>
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        title="Delete gallery photo?"
+        description={
+          <>
+            {toDelete && (
+              <img
+                src={toDelete.url}
+                alt=""
+                className="mb-3 aspect-4/3 w-full rounded-lg object-cover"
+              />
+            )}
+            <strong className="font-semibold text-stone-900">
+              Photo {toDelete?.number}
+            </strong>{" "}
+            will be removed from the homepage gallery. This can't be undone.
+          </>
+        }
+        confirmLabel="Delete photo"
+        onConfirm={deleteConfirmed}
+        onClose={() => setToDelete(null)}
+      />
     </div>
   );
 }
@@ -343,7 +383,38 @@ function TourVideoTab() {
   }
 
   if (isPending) {
-    return <p className="text-sm text-stone-500">Loading tour video...</p>;
+    return (
+      <div role="status" aria-label="Loading tour video" className={cardClass}>
+        <div className={cardHeaderClass}>
+              <div className={`${skeletonClass} h-5 w-24`} />
+            </div>
+        <div className="grid gap-6 p-5 lg:grid-cols-2">
+          <div>
+            <div className={`${skeletonClass} mb-2 h-4 w-28`} />
+            <div className={`${skeletonClass} aspect-video w-full rounded-lg`} />
+          </div>
+          <div className="space-y-5">
+            <div>
+                <div className={`${skeletonClass} mb-2 h-4 w-32`} />
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <div className={`${skeletonClass} w-full shrink-0 rounded-lg aspect-video sm:w-44`} />
+                  <div className={`${skeletonClass} h-24 flex-1 rounded-lg`} />
+                </div>
+              </div>
+            <div>
+                <div className={`${skeletonClass} mb-2 h-4 w-32`} />
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <div className={`${skeletonClass} w-full shrink-0 rounded-lg aspect-video sm:w-44`} />
+                  <div className={`${skeletonClass} h-24 flex-1 rounded-lg`} />
+                </div>
+              </div>
+          </div>
+        </div>
+        <div className="flex justify-end border-t border-stone-200 px-5 py-4">
+              <div className={`${skeletonClass} h-10 w-32 rounded-lg`} />
+            </div>
+      </div>
+    );
   }
 
   if (isError || !video) {
@@ -515,7 +586,15 @@ function BannerForm({
 
       <div className="p-5">
         {isPending ? (
-          <p className="text-sm text-stone-500">Loading banner...</p>
+          <div role="status" aria-label="Loading banner">
+            <div>
+                <div className={`${skeletonClass} mb-2 h-4 w-28`} />
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <div className={`${skeletonClass} w-full shrink-0 rounded-lg aspect-video sm:w-44`} />
+                  <div className={`${skeletonClass} h-24 flex-1 rounded-lg`} />
+                </div>
+              </div>
+          </div>
         ) : missing ? (
           <p className="text-sm text-stone-500">
             No banner exists yet, so it can't be updated here

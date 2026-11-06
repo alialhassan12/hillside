@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
+import ConfirmDialog from "../../components/admin/ConfirmDialog";
 import ImageUploadField from "../../components/admin/ImageUploadField";
 import {
   cardClass,
@@ -16,6 +17,7 @@ import {
   labelClass,
   primaryButtonClass,
   secondaryButtonClass,
+  skeletonClass,
 } from "../../components/admin/adminClasses";
 import {
   useCompanyAddress,
@@ -139,7 +141,19 @@ function AddressForm() {
       </div>
 
       {isPending ? (
-        <p className="p-5 text-sm text-stone-500">Loading address...</p>
+        <div role="status" aria-label="Loading address" className="grid gap-5 p-5 lg:grid-cols-2">
+          <div>
+                <div className={`${skeletonClass} mb-2 h-4 w-20`} />
+                <div className={`${skeletonClass} h-28 w-full rounded-lg`} />
+              </div>
+          <div>
+                <div className={`${skeletonClass} mb-2 h-4 w-32`} />
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <div className={`${skeletonClass} w-full shrink-0 rounded-lg aspect-square sm:w-24`} />
+                  <div className={`${skeletonClass} h-24 flex-1 rounded-lg`} />
+                </div>
+              </div>
+        </div>
       ) : missing ? (
         <p className="p-5 text-sm text-stone-500">
           No address exists yet, so it can't be updated here
@@ -208,6 +222,7 @@ function ContactMethods() {
 
   // null = the form creates a new contact.
   const [editing, setEditing] = useState<Contact | null>(null);
+  const [toDelete, setToDelete] = useState<Contact | null>(null);
   const [iconFile, setIconFile] = useState<File | null>(null);
   const [iconError, setIconError] = useState("");
   // Changing the key remounts the file input so it clears.
@@ -279,16 +294,12 @@ function ContactMethods() {
     }
   }
 
-  async function onDelete(contact: Contact) {
-    if (!window.confirm(`Delete the "${contact.name}" contact?`)) return;
-
-    try {
-      await deleteContact.mutateAsync(contact.id);
-      if (editing?.id === contact.id) selectEditing(null);
-      toast.success("Contact deleted successfully");
-    } catch (deleteError) {
-      toast.error(getErrorMessage(deleteError, "Failed to delete contact"));
-    }
+  // Runs from the confirmation dialog; errors stay in the dialog.
+  async function deleteConfirmed() {
+    if (!toDelete) return;
+    await deleteContact.mutateAsync(toDelete.id);
+    if (editing?.id === toDelete.id) selectEditing(null);
+    toast.success("Contact deleted successfully");
   }
 
   // The API answers 404 when there are no contacts yet.
@@ -315,7 +326,18 @@ function ContactMethods() {
         </div>
 
         {isPending ? (
-          <p className="p-5 text-sm text-stone-500">Loading contacts...</p>
+          <ul role="status" aria-label="Loading contacts" className="divide-y divide-stone-100">
+            {[0, 1, 2].map((row) => (
+              <li key={row} className="flex items-center gap-4 px-5 py-4">
+                <div className={`${skeletonClass} h-10 w-10 shrink-0 rounded-lg`} />
+                <div className="flex-1 space-y-2">
+                  <div className={`${skeletonClass} h-4 w-24`} />
+                  <div className={`${skeletonClass} h-3 w-48`} />
+                </div>
+                <div className={`${skeletonClass} h-8 w-20 rounded-lg`} />
+              </li>
+            ))}
+          </ul>
         ) : isError && !isNotFound(error) ? (
           <p role="alert" className="p-5 text-sm text-red-600">
             Failed to load contacts
@@ -366,7 +388,7 @@ function ContactMethods() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => onDelete(contact)}
+                      onClick={() => setToDelete(contact)}
                       disabled={isDeleting}
                       aria-label={`Delete ${contact.name}`}
                       className={`${deleteButtonClass} ${disabledClass}`}
@@ -476,6 +498,23 @@ function ContactMethods() {
           </button>
         </div>
       </form>
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        title="Delete contact method?"
+        description={
+          <>
+            <strong className="font-semibold text-stone-900">
+              {toDelete?.name}
+            </strong>{" "}
+            ({toDelete?.link}) will be removed from the footer and the Contact
+            page. This can't be undone.
+          </>
+        }
+        confirmLabel="Delete contact"
+        onConfirm={deleteConfirmed}
+        onClose={() => setToDelete(null)}
+      />
     </div>
   );
 }

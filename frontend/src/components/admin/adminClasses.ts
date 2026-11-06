@@ -39,3 +39,7 @@ export const inactiveTabClass = "text-stone-600 hover:text-stone-900";
 
 // Selected table row: one quiet surface step, no colored marker.
 export const selectedRowClass = "bg-stone-100";
+
+// Loading placeholder block; size it with h-/w- classes where it is used.
+export const skeletonClass =
+  "animate-pulse rounded bg-stone-200 motion-reduce:animate-none";
