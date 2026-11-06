@@ -434,7 +434,7 @@ export default function TestimonialsPage() {
         </ul>
       )}
 
-      {!isPending && !isError && total > PAGE_SIZE && (
+      {!isPending && !isError && total > 0 && (
         <div className="mt-6 flex items-center justify-between text-sm text-stone-500">
           <span className="tabular-nums">
             Page {currentPage} of {lastPage} · {total} total
