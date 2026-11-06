@@ -1,14 +1,22 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type BaseSyntheticEvent } from "react";
 import { X } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
+import { useSendFeedback } from "../../hooks/useTestimonials";
+import { getErrorMessage, getValidationErrors } from "../../lib/apiErrors";
 
-const MAX_PHOTO_SIZE = 1024 * 1024;
+// Laravel: profile max:1048 (KB).
+const MAX_PHOTO_SIZE = 1048 * 1024;
 
 const feedbackSchema = z.object({
-  name: z.string().trim().min(2, "Please enter your full name"),
-  representing: z.string().trim().optional(),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Please enter your full name")
+    .max(255, "Name is too long"),
+  representing: z.string().trim().max(255, "This is too long").optional(),
   feedback: z
     .string()
     .trim()
@@ -40,7 +48,8 @@ export default function FeedbackModal() {
     control,
     handleSubmit,
     reset,
-    formState: { errors },
+    setError,
+    formState: { errors, isSubmitting },
   } = useForm<FeedbackFormValues>({
     resolver: zodResolver(feedbackSchema),
     defaultValues: {
@@ -65,8 +74,55 @@ export default function FeedbackModal() {
     dialogRef.current?.close();
   }
 
-  function onSubmit(_values: FeedbackFormValues) {
-    setNotice("Feedback submission is not available yet.");
+  const sendFeedback = useSendFeedback();
+
+  async function onSubmit(
+    values: FeedbackFormValues,
+    event?: BaseSyntheticEvent,
+  ) {
+    setNotice("");
+
+    try {
+      await sendFeedback.mutateAsync({
+        name: values.name,
+        feedback: values.feedback,
+        // Optional fields are left out when empty.
+        ...(values.representing
+          ? { representation: values.representing }
+          : {}),
+        ...(values.photo?.length ? { profile: values.photo[0] } : {}),
+      });
+
+      // Closing the dialog also resets the form (see onDialogClose).
+      (event?.target as HTMLElement | undefined)?.closest("dialog")?.close();
+      toast.success(
+        "Thank you! Your feedback was received and will appear after review.",
+      );
+    } catch (error) {
+      // Keep what the guest typed and show Laravel's field errors.
+      // The API names differ from the form: representation, profile.
+      const fieldErrors = getValidationErrors(error);
+      const fieldMap = {
+        name: "name",
+        representation: "representing",
+        feedback: "feedback",
+        profile: "photo",
+      } as const;
+
+      Object.entries(fieldMap).forEach(([apiField, formField]) => {
+        const fieldError = fieldErrors?.[apiField]?.[0];
+        if (fieldError) setError(formField, { message: fieldError });
+      });
+
+      setNotice(
+        fieldErrors
+          ? "Please check the highlighted fields."
+          : getErrorMessage(
+              error,
+              "Your feedback could not be sent. Please try again.",
+            ),
+      );
+    }
   }
 
   function onDialogClose() {
@@ -155,8 +211,23 @@ export default function FeedbackModal() {
                 id="feedback-representing"
                 {...register("representing")}
                 placeholder="e.g., Google, Apple, Samsung"
+                aria-invalid={!!errors.representing}
+                aria-describedby={
+                  errors.representing
+                    ? "feedback-representing-error"
+                    : undefined
+                }
                 className="w-full rounded-md border border-gray-300 px-4 py-3 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
               />
+
+              {errors.representing && (
+                <p
+                  id="feedback-representing-error"
+                  className="mt-1 text-sm text-red-600"
+                >
+                  {errors.representing.message}
+                </p>
+              )}
             </div>
 
             <div>
@@ -233,7 +304,7 @@ export default function FeedbackModal() {
           </div>
 
           {notice && (
-            <p role="status" className="mt-5 text-sm text-body">
+            <p role="alert" className="mt-5 text-sm text-red-600">
               {notice}
             </p>
           )}
@@ -249,9 +320,11 @@ export default function FeedbackModal() {
 
             <button
               type="submit"
-              className="cursor-pointer rounded-md bg-sand px-5 py-3 text-sm font-semibold uppercase text-white transition-colors hover:bg-gold"
+              disabled={isSubmitting}
+              aria-busy={isSubmitting}
+              className="cursor-pointer rounded-md bg-sand px-5 py-3 text-sm font-semibold uppercase text-white transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Submit Feedback
+              {isSubmitting ? "Sending..." : "Submit Feedback"}
             </button>
           </div>
         </form>

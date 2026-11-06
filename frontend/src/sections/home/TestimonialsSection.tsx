@@ -1,42 +1,28 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
 import FeedbackModal from "../../components/testimonials/FeedbackModal";
-
-interface Testimonial {
-  id: string;
-  name: string;
-  representing?: string;
-  feedback: string;
-}
-
-// Temporary data for development only.
-const testimonials: Testimonial[] = [
-  {
-    id: "demo-1",
-    name: "Demo Guest 1",
-    representing: "Example Company",
-    feedback: "Sample feedback to test the testimonial layout.",
-  },
-  {
-    id: "demo-2",
-    name: "Demo Guest 2",
-    feedback: "Another sample review to test carousel navigation.",
-  },
-];
+import { usePublicTestimonials } from "../../hooks/useTestimonials";
 
 export default function TestimonialsSection() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const {
+    data: testimonials = [],
+    isPending,
+    isError,
+  } = usePublicTestimonials();
 
   const hasTestimonials = testimonials.length > 0;
-  const activeTestimonial = testimonials[activeIndex];
+  // Keep the index valid if a refetch returns fewer testimonials.
+  const currentIndex = hasTestimonials ? activeIndex % testimonials.length : 0;
+  const activeTestimonial = testimonials[currentIndex];
 
   function nextTestimonial() {
-    setActiveIndex((current) => (current + 1) % testimonials.length);
+    setActiveIndex((currentIndex + 1) % testimonials.length);
   }
 
   function previousTestimonial() {
     setActiveIndex(
-      (current) => (current - 1 + testimonials.length) % testimonials.length,
+      (currentIndex - 1 + testimonials.length) % testimonials.length,
     );
   }
 
@@ -56,7 +42,15 @@ export default function TestimonialsSection() {
         </div>
 
         <div className="mx-auto mt-12 max-w-225">
-          {hasTestimonials ? (
+          {isPending ? (
+            <p className="py-12 text-center text-body">
+              Loading guest reviews...
+            </p>
+          ) : isError ? (
+            <p className="py-12 text-center text-body">
+              Guest reviews could not be loaded right now.
+            </p>
+          ) : hasTestimonials ? (
             <div className="rounded-2xl bg-white px-6 py-10 shadow-sm sm:px-12">
               <Quote size={42} className="mb-6 fill-sand/20 text-sand" />
 
@@ -66,9 +60,18 @@ export default function TestimonialsSection() {
 
               <div className="mt-8 flex items-center gap-4 border-t border-gray-100 pt-6">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-forest/10">
-                  <span className="font-serif text-2xl text-forest">
-                    {activeTestimonial.name.charAt(0).toUpperCase()}
-                  </span>
+                  {activeTestimonial.profile_url ? (
+                    <img
+                      key={activeTestimonial.id}
+                      src={activeTestimonial.profile_url}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-serif text-2xl text-forest">
+                      {activeTestimonial.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
 
                 <div>
@@ -76,9 +79,9 @@ export default function TestimonialsSection() {
                     {activeTestimonial.name}
                   </h3>
 
-                  {activeTestimonial.representing && (
+                  {activeTestimonial.representation && (
                     <p className="mt-1 font-sans text-sm text-gold">
-                      {activeTestimonial.representing}
+                      {activeTestimonial.representation}
                     </p>
                   )}
                 </div>
@@ -103,7 +106,7 @@ export default function TestimonialsSection() {
 
             {hasTestimonials && (
               <span className="font-sans text-sm text-body">
-                {activeIndex + 1} / {testimonials.length}
+                {currentIndex + 1} / {testimonials.length}
               </span>
             )}
 
