@@ -98,12 +98,12 @@ class ContactController extends Controller
         $contacts=Contact::all();
         $address=Company::select('address','address_icon')->first();
 
-        if($contacts->isEmpty()){
+        if(!$contacts){
             return response()->json([
                 'message'=>'No contacts found'
             ],404);
         }
-        if($address->isEmpty()){
+        if(!$address){
             return response()->json([
                 'message'=>'No address found'
             ],404);

@@ -53,6 +53,7 @@ class TestimonialsController extends Controller
         ->when($visibility!==null,function($query) use ($visibility){
             $query->where('is_shown',$visibility);
         })
+        ->orderBy('created_at','desc')
         ->paginate(10);
 
         if($testimonials->isEmpty()){

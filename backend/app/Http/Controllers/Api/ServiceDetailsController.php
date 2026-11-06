@@ -20,11 +20,15 @@ class ServiceDetailsController extends Controller
             'service_id'=>['required','uuid','exists:services,id'],
             'title'=>['required','string','max:255'],
             'description'=>['required','string'],
-            'image'=>['required','image','max:1048']
+            'image'=>['nullable','image','max:1048']
         ]);
 
-        $imagePath=$this->storage->upload($validated['image'],'service_details');
-        $validated['image']=$imagePath;
+        if(isset($validated['image'])){
+            $imagePath=$this->storage->upload($validated['image'],'service_details');
+            $validated['image']=$imagePath;
+        }else{
+            $validated['image']=null;
+        }
 
         $serviceDetail=ServiceDetail::create($validated);
 

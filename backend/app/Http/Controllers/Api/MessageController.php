@@ -35,6 +35,7 @@ class MessageController extends Controller
                     ->orWhere('subject','like',"%$search%")
                     ->orWhere('phone','like',"%$search%");
             })
+            ->orderBy('created_at','desc')
             ->paginate(10);
 
         if($messages->isEmpty()){

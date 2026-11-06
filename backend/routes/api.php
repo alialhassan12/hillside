@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Api\AboutController;
 use App\Http\Controllers\Api\AboutStatsController;
+use App\Http\Controllers\Api\AuthConreoller;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\APi\DashboardController;
 use App\Http\Controllers\Api\GalleryController;
 use App\Http\Controllers\Api\HeroController;
 use App\Http\Controllers\Api\MessageController;
@@ -12,6 +14,11 @@ use App\Http\Controllers\Api\ServicesController;
 use App\Http\Controllers\Api\TestimonialsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+
+Route::middleware('throttle:public-form')->post('/login',[AuthConreoller::class,'login']);
+Route::post('/logout',[AuthConreoller::class,'logout']);
+Route::middleware('throttle:public-form')->post('/add-admin',[AuthConreoller::class,'addUser']);
 
 Route::post('/hero',[HeroController::class,'store']);
 Route::get('/hero',[HeroController::class,'getHero']);
@@ -63,14 +70,17 @@ Route::get("/gallery/video",[GalleryController::class,'getVideo']);
 Route::put("/gallery/video/update",[GalleryController::class,'updateVideo']);
 Route::put("/gallery/video/thumbnail/update",[GalleryController::class,'updateVideoThumbnail']);
 
-Route::post("/messages/send",[MessageController::class,'send']);
+Route::middleware('throttle:public-form')->post("/messages/send",[MessageController::class,'send']);
 Route::get("/messages",[MessageController::class,'getMessages']);
 Route::put("/messages/status/change",[MessageController::class,'changeStatus']);
 Route::delete("/messages/delete/{id}",[MessageController::class,'delete']);
 
 Route::get("/footer",[ContactController::class,'fetchFooterData']);
 
-Route::post("/feedback/send",[TestimonialsController::class,'send']);
+Route::middleware('throttle:public-form')->post("/feedback/send",[TestimonialsController::class,'send']);
 Route::get("/testimonials",[TestimonialsController::class,'getTestimonials']);
 Route::put("/testimonials/status/change",[TestimonialsController::class,'changeStatus']);
 Route::put("/testimonials/visibility/change",[TestimonialsController::class,'changeVisibility']);
+
+
+Route::get("/dashboard",[DashboardController::class,'dashboardData']);
