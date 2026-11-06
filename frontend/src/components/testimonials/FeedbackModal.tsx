@@ -135,7 +135,7 @@ export default function FeedbackModal() {
       <button
         type="button"
         onClick={openModal}
-        className="mt-6 cursor-pointer rounded-full border border-gold px-5 py-2 font-sans text-xs font-semibold uppercase text-gold transition-colors hover:bg-gold hover:text-white"
+        className="mt-6 cursor-pointer rounded-full border border-gold px-5 py-2 font-sans text-xs font-semibold uppercase text-gold transition-all duration-300 hover:-translate-y-0.75 hover:bg-gold hover:text-white motion-reduce:hover:translate-y-0"
       >
         + Add Feedback
       </button>
@@ -143,8 +143,12 @@ export default function FeedbackModal() {
       <dialog
         ref={dialogRef}
         onClose={onDialogClose}
+        // Escape must not close (and reset) the form mid-submission.
+        onCancel={(event) => {
+          if (isSubmitting) event.preventDefault();
+        }}
         aria-labelledby="feedback-title"
-        className="m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-lg bg-white p-0 shadow-xl backdrop:bg-black/70"
+        className="m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-lg bg-white p-0 shadow-xl backdrop:bg-black/70 motion-safe:animate-zoom-in"
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
           <h3
@@ -157,6 +161,7 @@ export default function FeedbackModal() {
           <button
             type="button"
             onClick={closeModal}
+            disabled={isSubmitting}
             aria-label="Close feedback form"
             className="cursor-pointer rounded bg-gray-100 p-2 text-gray-500 hover:text-heading"
           >
@@ -313,7 +318,8 @@ export default function FeedbackModal() {
             <button
               type="button"
               onClick={closeModal}
-              className="cursor-pointer px-4 py-3 text-sm font-semibold uppercase text-heading"
+              disabled={isSubmitting}
+              className="cursor-pointer px-4 py-3 text-sm font-semibold uppercase text-heading disabled:cursor-not-allowed disabled:opacity-50"
             >
               Close
             </button>

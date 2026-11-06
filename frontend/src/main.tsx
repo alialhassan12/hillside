@@ -12,6 +12,11 @@ import "@fontsource/nunito/700.css";
 import "@fontsource/old-standard-tt/400.css";
 import "@fontsource/old-standard-tt/700.css";
 
+// Always start at the top on refresh instead of restoring the old position.
+if ("scrollRestoration" in window.history) {
+  window.history.scrollRestoration = "manual";
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

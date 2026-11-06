@@ -7,7 +7,18 @@ export default function HeroSection() {
   if (isPending) {
     return (
       <section className="flex min-h-screen items-center justify-center bg-ink">
-        <p className="text-white">Loading hotel information...</p>
+        <div
+          role="status"
+          aria-label="Loading hotel information"
+          className="flex w-full max-w-5xl flex-col items-center px-6"
+        >
+          <div className="animate-pulse motion-reduce:animate-none mb-5 h-4 w-64 max-w-full rounded bg-white/10" />
+          <div className="animate-pulse motion-reduce:animate-none mb-6 h-12 w-full max-w-2xl rounded bg-white/10 md:h-20" />
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <div className="animate-pulse motion-reduce:animate-none h-12 w-40 bg-white/10" />
+            <div className="animate-pulse motion-reduce:animate-none h-12 w-40 bg-white/10" />
+          </div>
+        </div>
       </section>
     );
   }
@@ -27,7 +38,7 @@ export default function HeroSection() {
     >
       <div className="absolute inset-0 bg-ink/50" />
 
-      <div className="relative z-10 mx-auto max-w-5xl px-6 text-center text-white">
+      <div className="relative z-10 mx-auto max-w-5xl px-6 text-center text-white motion-safe:animate-rise-in">
         <p className="mb-5 font-sans text-[13px] font-bold leading-[1.8] tracking-[1px] uppercase text-[#f5f5f5]">
           {hero.subTitle}
         </p>

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
 import FeedbackModal from "../../components/testimonials/FeedbackModal";
@@ -29,7 +30,7 @@ export default function TestimonialsSection() {
   return (
     <section className="bg-surface py-24">
       <div className="mx-auto max-w-330 px-6">
-        <div className="text-center">
+        <div data-reveal="up" className="text-center">
           <p className="font-sans text-[13px] font-bold uppercase tracking-[2px] text-gold">
             Testimonial
           </p>
@@ -41,11 +42,31 @@ export default function TestimonialsSection() {
           <FeedbackModal />
         </div>
 
-        <div className="mx-auto mt-12 max-w-225">
+        <div
+          data-reveal="up"
+          style={{ "--reveal-delay": "150ms" } as CSSProperties}
+          className="mx-auto mt-12 max-w-225"
+        >
           {isPending ? (
-            <p className="py-12 text-center text-body">
-              Loading guest reviews...
-            </p>
+            <div
+              role="status"
+              aria-label="Loading guest reviews"
+              className="rounded-2xl bg-white px-6 py-10 shadow-sm sm:px-12"
+            >
+              <div className="animate-pulse motion-reduce:animate-none mb-6 h-10.5 w-10.5 rounded bg-sand/20" />
+              <div className="space-y-3">
+                <div className="animate-pulse motion-reduce:animate-none h-5 w-full rounded bg-forest/10" />
+                <div className="animate-pulse motion-reduce:animate-none h-5 w-full rounded bg-forest/10" />
+                <div className="animate-pulse motion-reduce:animate-none h-5 w-2/3 rounded bg-forest/10" />
+              </div>
+              <div className="mt-8 flex items-center gap-4 border-t border-gray-100 pt-6">
+                <div className="animate-pulse motion-reduce:animate-none h-14 w-14 shrink-0 rounded-full bg-forest/10" />
+                <div className="space-y-2">
+                  <div className="animate-pulse motion-reduce:animate-none h-5 w-32 rounded bg-forest/10" />
+                  <div className="animate-pulse motion-reduce:animate-none h-4 w-24 rounded bg-sand/20" />
+                </div>
+              </div>
+            </div>
           ) : isError ? (
             <p className="py-12 text-center text-body">
               Guest reviews could not be loaded right now.

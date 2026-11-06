@@ -26,7 +26,10 @@ export default function TourVideoSection() {
   }
 
   return (
-    <section className="relative flex min-h-175 items-center justify-center overflow-hidden bg-forest">
+    <section
+      id="vd"
+      className="relative flex min-h-175 items-center justify-center overflow-hidden bg-forest"
+    >
       {video && (
         <video
           key={video.video_url}
@@ -44,7 +47,7 @@ export default function TourVideoSection() {
 
       <div className="absolute inset-0 bg-zinc-800/45" />
 
-      <div className="relative z-10 flex flex-col items-center gap-6 px-6 py-24 text-center">
+      <div data-reveal="up" className="relative z-10 flex flex-col items-center gap-6 px-6 py-24 text-center">
         <p className="font-sans text-[13px] font-bold uppercase tracking-[2px] text-white">
           Watch Our Luxurious Hotel
         </p>
@@ -65,7 +68,11 @@ export default function TourVideoSection() {
         </button> */}
         {/* Play button only when the API returned a video */}
         {isPending ? (
-          <p className="font-sans text-sm text-white/80">Loading video...</p>
+          <div
+            role="status"
+            aria-label="Loading video"
+            className="animate-pulse motion-reduce:animate-none h-20 w-20 rounded-full bg-white/20"
+          />
         ) : !video ? (
           <p className="font-sans text-sm text-white/80">
             The tour video is unavailable right now.
@@ -93,15 +100,16 @@ export default function TourVideoSection() {
       {/* Full video popup */}
       <dialog
         ref={dialogRef}
+        aria-label="Hotel tour video"
         onClose={stopVideo}
         onClick={(event) => {
           if (event.target === event.currentTarget) {
             closeVideo();
           }
         }}
-        className="m-auto w-[90vw] max-w-225 border-0 bg-transparent p-0 backdrop:bg-black/85"
+        className="m-auto w-[90vw] max-w-225 overflow-visible border-0 bg-transparent p-0 backdrop:bg-black/85"
       >
-        <div className="relative">
+        <div className="relative motion-safe:animate-rise-in">
           <button
             type="button"
             onClick={closeVideo}

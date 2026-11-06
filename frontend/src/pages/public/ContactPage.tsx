@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Link } from "react-router";
 import { useContactBanner } from "../../hooks/useContactBanner";
 import { useForm, useWatch } from "react-hook-form";
@@ -109,7 +110,7 @@ export default function ContactPage() {
       >
         <div className="absolute inset-0 bg-black/45" />
 
-        <div className="relative z-10 px-6 text-center text-white">
+        <div className="relative z-10 px-6 text-center text-white motion-safe:animate-rise-in">
           <div className="mb-3 flex items-center justify-center gap-2 font-sans text-xs font-bold uppercase tracking-widest">
             <Link to="/" className="hover:text-sand">
               Home
@@ -133,7 +134,7 @@ export default function ContactPage() {
             </p>
           </div>
 
-          <div className="mx-auto mt-8 grid max-w-150 grid-cols-1 gap-6 text-center sm:grid-cols-2">
+          <div data-reveal="up" className="mx-auto mt-8 grid max-w-150 grid-cols-1 gap-6 text-center sm:grid-cols-2">
             <div>
               <h3 className="font-sans text-sm font-semibold text-heading">
                 Address:
@@ -174,6 +175,8 @@ export default function ContactPage() {
           <form
             noValidate
             onSubmit={handleSubmit(onSubmit)}
+            data-reveal="up"
+            style={{ "--reveal-delay": "120ms" } as CSSProperties}
             className="mx-auto mt-10 max-w-150"
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

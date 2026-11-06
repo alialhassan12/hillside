@@ -5,8 +5,21 @@ export default function HighlightsBar() {
 
   if (isPending) {
     return (
-      <section className="relative z-20 mx-auto min-h-54.5 w-full max-w-330 bg-ink lg:-mt-20">
-        <p className="p-6 text-white">Loading hotel highlights...</p>
+      <section
+        role="status"
+        aria-label="Loading hotel highlights"
+        className="relative z-20 mx-auto w-full max-w-330 lg:-mt-20"
+      >
+        <div className="grid grid-cols-1 bg-ink shadow-soft md:grid-cols-2 lg:grid-cols-5">
+          {[0, 1, 2, 3].map((cell) => (
+            <div key={cell} className="space-y-3 px-6 py-5 lg:py-12">
+              <div className="animate-pulse motion-reduce:animate-none h-3 w-28 rounded bg-white/10" />
+              <div className="animate-pulse motion-reduce:animate-none h-4 w-full rounded bg-white/10" />
+              <div className="animate-pulse motion-reduce:animate-none h-4 w-3/4 rounded bg-white/10" />
+            </div>
+          ))}
+          <div className="min-h-32.5 bg-forest md:col-span-2 lg:col-span-1" />
+        </div>
       </section>
     );
   }

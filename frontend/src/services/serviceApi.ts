@@ -1,4 +1,5 @@
 import { api } from "../lib/api";
+import { isNotFound } from "../lib/apiErrors";
 import type { Service, ServicesResponse } from "../types/service";
 import type { ServiceDetail, ServiceDetailsResponse } from "../types/service";
 
@@ -17,11 +18,17 @@ export async function getServices(): Promise<Service[]> {
 export async function getServiceDetails(
   serviceId: string,
 ): Promise<ServiceDetail[]> {
-  const response = await api.get<ServiceDetailsResponse>(
-    `/services/details/${encodeURIComponent(serviceId)}`,
-  );
+  try {
+    const response = await api.get<ServiceDetailsResponse>(
+      `/services/details/${encodeURIComponent(serviceId)}`,
+    );
 
-  return byCreatedAt(response.data.data);
+    return byCreatedAt(response.data.data);
+  } catch (error) {
+    // Laravel answers 404 when a service has no details yet.
+    if (isNotFound(error)) return [];
+    throw error;
+  }
 }
 
 export type CreateServiceData = {

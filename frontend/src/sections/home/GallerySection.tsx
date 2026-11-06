@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { useRef, useState } from "react";
 import type { KeyboardEvent, TouchEvent } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
@@ -65,17 +66,34 @@ export default function GallerySection() {
     }
   }
 
+  if (isPending) {
+    return (
+      <section aria-label="Hotel gallery" className="mb-12 px-6">
+        <ul
+          role="status"
+          aria-label="Loading gallery"
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4"
+        >
+          {Array.from({ length: 8 }, (_, tile) => (
+            <li
+              key={tile}
+              className="animate-pulse motion-reduce:animate-none h-80 rounded-[10px] bg-forest/10"
+            />
+          ))}
+        </ul>
+      </section>
+    );
+  }
+
   // The API answers 404 when the gallery is empty.
-  if (isPending || isError || total === 0) {
+  if (isError || total === 0) {
     return (
       <section aria-label="Hotel gallery" className="mb-12 px-6">
         <p
           role={isError && !isNotFound(error) ? "alert" : undefined}
           className="py-12 text-center text-body"
         >
-          {isPending
-            ? "Loading gallery..."
-            : isError && !isNotFound(error)
+          {isError && !isNotFound(error)
               ? "The gallery could not be loaded right now."
               : "No gallery photos yet."}
         </p>
@@ -87,7 +105,11 @@ export default function GallerySection() {
     <section aria-label="Hotel gallery" className="mb-12 px-6">
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
         {galleryImages.map((image, index) => (
-          <li key={image.id}>
+          <li
+            key={image.id}
+            data-reveal="up"
+            style={{ "--reveal-delay": `${(index % 4) * 100}ms` } as CSSProperties}
+          >
             <button
               type="button"
               onClick={() => openImage(index)}
@@ -123,9 +145,11 @@ export default function GallerySection() {
       >
         {selectedIndex !== null && (
           <img
+            // Re-keyed so each photo zooms in when you open or change it.
+            key={selectedIndex}
             src={galleryImages[selectedIndex]?.path_url}
             alt={`Hillside Hotel photo ${selectedIndex + 1} of ${total}`}
-            className="max-h-[80dvh] max-w-[90vw] rounded-[10px] object-contain"
+            className="max-h-[80dvh] max-w-[90vw] rounded-[10px] object-contain motion-safe:animate-zoom-in"
           />
         )}
 
