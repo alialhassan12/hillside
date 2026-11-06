@@ -70,6 +70,7 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::get("/testimonials/public",[TestimonialsController::class,'getPublicTestimonials']);
     Route::put("/testimonials/status/change",[TestimonialsController::class,'changeStatus']);
     Route::put("/testimonials/visibility/change",[TestimonialsController::class,'changeVisibility']);
+    Route::delete("/testimonials/delete/{id}",[TestimonialsController::class,'deleteTestimonial']);
 
     Route::get("/dashboard",[DashboardController::class,'dashboardData']);
 });

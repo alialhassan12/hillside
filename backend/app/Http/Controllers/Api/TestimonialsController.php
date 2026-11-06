@@ -135,4 +135,23 @@ class TestimonialsController extends Controller
             'data'=>$testimonial
         ],200);
     }
+
+    public function deleteTestimonial($id){
+        $testimonial=Testimonial::find($id);
+        if(!$testimonial){
+            return response()->json([
+                'message'=>'Testimonial not found'
+            ],404);
+        }
+        if($testimonial->status !== 'rejected'){
+            return response()->json([
+                'message'=>'Only rejected testimonials can be deleted'
+            ],400);
+        }
+        
+        $testimonial->delete();
+        return response()->json([
+            'message'=>'Testimonial deleted successfully'
+        ],200);
+    }
 }
