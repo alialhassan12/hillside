@@ -1,6 +1,5 @@
 import { isAxiosError } from "axios";
 
-// Laravel sends 422 with { message, errors: { field: [messages] } }.
 export function getValidationErrors(
   error: unknown,
 ): Record<string, string[]> | null {

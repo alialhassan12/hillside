@@ -1,50 +1,92 @@
-import { useState } from "react";
-import { Eye, MailOpen, Search, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Eye, Mail, MailOpen, Search, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
 import {
   cardClass,
   cardHeaderClass,
   cardTitleClass,
   inputClass,
-  sampleBadgeClass,
   secondaryButtonClass,
   selectedRowClass,
 } from "../../components/admin/adminClasses";
+import {
+  useChangeMessageStatus,
+  useDeleteMessage,
+  useMessages,
+} from "../../hooks/useMessages";
+import { getErrorMessage } from "../../lib/apiErrors";
+import type { Message } from "../../types/message";
 
-// Sample rows to show the layout only.
-const sampleMessages = [
-  {
-    id: 1,
-    sender: "Sample Sender 1",
-    email: "sender1@example.com",
-    status: "Unread",
-  },
-  {
-    id: 2,
-    sender: "Sample Sender 2",
-    email: "sender2@example.com",
-    status: "Unread",
-  },
-  {
-    id: 3,
-    sender: "Sample Sender 3",
-    email: "sender3@example.com",
-    status: "Read",
-  },
-  {
-    id: 4,
-    sender: "Sample Sender 4",
-    email: "sender4@example.com",
-    status: "Read",
-  },
-];
+const disabledClass = "disabled:cursor-not-allowed disabled:opacity-50";
+const pageButtonClass = `cursor-pointer rounded-lg border border-stone-200 px-3 py-1.5 text-stone-700 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-400 disabled:hover:bg-transparent`;
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString(undefined, { dateStyle: "medium" });
+}
+
+function formatDateTime(value: string) {
+  return new Date(value).toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
 
 export default function MessagesPage() {
-  const [selectedId, setSelectedId] = useState(sampleMessages[0].id);
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const selectedMessage = sampleMessages.find(
-    (message) => message.id === selectedId,
+  // Search on the server after the user stops typing.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const next = searchInput.trim();
+      if (next !== search) {
+        setSearch(next);
+        setPage(1);
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput, search]);
+
+  const { data, isPending, isError, isFetching } = useMessages(page, search);
+  const changeStatus = useChangeMessageStatus();
+  const deleteMessage = useDeleteMessage();
+
+  // Laravel returns no fixed order; show newest first on each page.
+  const messages = [...(data?.data ?? [])].sort((a, b) =>
+    b.created_at.localeCompare(a.created_at),
   );
+  const lastPage = data?.last_page ?? 1;
+
+  const selected =
+    messages.find((message) => message.id === selectedId) ?? messages[0];
+
+  async function onToggleStatus(message: Message) {
+    const status = message.status === "unread" ? "read" : "unread";
+
+    try {
+      await changeStatus.mutateAsync({ id: message.id, status });
+      toast.success(`Marked as ${status}`);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to update the message"));
+    }
+  }
+
+  async function onDelete(message: Message) {
+    if (!window.confirm(`Delete the message from ${message.name}?`)) return;
+
+    try {
+      await deleteMessage.mutateAsync(message.id);
+      setSelectedId(null);
+      // Deleting the last message on a page moves back one page.
+      if (messages.length === 1 && page > 1) setPage(page - 1);
+      toast.success("Message deleted");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to delete the message"));
+    }
+  }
 
   return (
     <>
@@ -63,7 +105,11 @@ export default function MessagesPage() {
               <h2 id="inbox-title" className={cardTitleClass}>
                 Inbox
               </h2>
-              <span className={sampleBadgeClass}>Sample</span>
+              {data && data.total > 0 && (
+                <span className="text-sm text-stone-500 tabular-nums">
+                  {data.total} total
+                </span>
+              )}
             </div>
 
             <div className="relative w-full sm:w-64">
@@ -78,113 +124,143 @@ export default function MessagesPage() {
               <input
                 id="message-search"
                 type="search"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
                 placeholder="Search messages"
                 className={`${inputClass} pl-9`}
               />
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-stone-50 text-xs text-stone-500">
-                <tr>
-                  <th scope="col" className="px-5 py-3 font-medium">
-                    Sender
-                  </th>
-                  <th
-                    scope="col"
-                    className="hidden px-5 py-3 font-medium md:table-cell"
-                  >
-                    Subject
-                  </th>
-                  <th
-                    scope="col"
-                    className="hidden px-5 py-3 font-medium sm:table-cell"
-                  >
-                    Date
-                  </th>
-                  <th scope="col" className="px-5 py-3 font-medium">
-                    Status
-                  </th>
-                  <th scope="col" className="px-5 py-3">
-                    <span className="sr-only">Actions</span>
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-stone-100">
-                {sampleMessages.map((message) => {
-                  const isSelected = message.id === selectedId;
-                  const isUnread = message.status === "Unread";
-
-                  return (
-                    <tr
-                      key={message.id}
-                      className={isSelected ? selectedRowClass : undefined}
+          {isPending ? (
+            <p className="p-5 text-sm text-stone-500">Loading messages...</p>
+          ) : isError ? (
+            <p role="alert" className="p-5 text-sm text-red-600">
+              Failed to load messages
+            </p>
+          ) : messages.length === 0 ? (
+            <p className="p-5 text-sm text-stone-500">
+              {search ? `No messages match "${search}"` : "No messages yet"}
+            </p>
+          ) : (
+            <div
+              className={`overflow-x-auto transition-opacity ${
+                isFetching ? "opacity-60" : ""
+              }`}
+            >
+              <table className="w-full text-left text-sm">
+                <thead className="bg-stone-50 text-xs text-stone-500">
+                  <tr>
+                    <th scope="col" className="px-5 py-3 font-medium">
+                      Sender
+                    </th>
+                    <th
+                      scope="col"
+                      className="hidden px-5 py-3 font-medium md:table-cell"
                     >
-                      <td className="px-5 py-3">
-                        <p
-                          className={`text-stone-900 ${
-                            isUnread ? "font-semibold" : "font-medium"
-                          }`}
-                        >
-                          {message.sender}
-                        </p>
-                        <p className="text-xs text-stone-500">{message.email}</p>
-                      </td>
-                      <td className="hidden px-5 py-3 md:table-cell">
-                        Sample subject
-                      </td>
-                      <td className="hidden px-5 py-3 text-stone-500 tabular-nums sm:table-cell">
-                        —
-                      </td>
-                      <td className="px-5 py-3">
-                        <span
-                          className={`inline-flex items-center gap-2 ${
-                            isUnread ? "text-stone-900" : "text-stone-500"
-                          }`}
-                        >
-                          {isUnread && (
-                            <span
-                              aria-hidden="true"
-                              className="h-2 w-2 rounded-full bg-gold"
-                            />
-                          )}
-                          {message.status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedId(message.id)}
-                          aria-pressed={isSelected}
-                          className="inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-forest transition-colors hover:bg-stone-100 aria-pressed:bg-stone-100"
-                        >
-                          <Eye size={16} aria-hidden="true" />
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      Subject
+                    </th>
+                    <th
+                      scope="col"
+                      className="hidden px-5 py-3 font-medium sm:table-cell"
+                    >
+                      Date
+                    </th>
+                    <th scope="col" className="px-5 py-3 font-medium">
+                      Status
+                    </th>
+                    <th scope="col" className="px-5 py-3">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-stone-100">
+                  {messages.map((message) => {
+                    const isSelected = message.id === selected?.id;
+                    const isUnread = message.status === "unread";
+
+                    return (
+                      <tr
+                        key={message.id}
+                        className={isSelected ? selectedRowClass : undefined}
+                      >
+                        <td className="px-5 py-3">
+                          <p
+                            className={`text-stone-900 ${
+                              isUnread ? "font-semibold" : "font-medium"
+                            }`}
+                          >
+                            {message.name}
+                          </p>
+                          <p className="text-xs text-stone-500">
+                            {message.email}
+                          </p>
+                        </td>
+                        <td className="hidden max-w-56 px-5 py-3 md:table-cell">
+                          <p className="truncate">{message.subject}</p>
+                        </td>
+                        <td className="hidden px-5 py-3 whitespace-nowrap text-stone-500 tabular-nums sm:table-cell">
+                          {formatDate(message.created_at)}
+                        </td>
+                        <td className="px-5 py-3">
+                          <span
+                            className={`inline-flex items-center gap-2 ${
+                              isUnread ? "text-stone-900" : "text-stone-500"
+                            }`}
+                          >
+                            {isUnread && (
+                              <span
+                                aria-hidden="true"
+                                className="h-2 w-2 rounded-full bg-gold"
+                              />
+                            )}
+                            {isUnread ? "Unread" : "Read"}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedId(message.id)}
+                            aria-pressed={isSelected}
+                            className="inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-forest transition-colors hover:bg-stone-100 aria-pressed:bg-stone-100"
+                          >
+                            <Eye size={16} aria-hidden="true" />
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <div className="flex items-center justify-between border-t border-stone-200 px-5 py-3 text-sm text-stone-500">
-            <span>Page 1</span>
+            <span className="tabular-nums">
+              Page {page} of {lastPage}
+            </span>
             <div className="flex gap-2">
               <button
                 type="button"
-                disabled
-                className="cursor-not-allowed rounded-lg border border-stone-200 px-3 py-1.5 text-stone-400"
+                onClick={() => {
+                  setPage((current) => current - 1);
+                  setSelectedId(null);
+                }}
+                disabled={page <= 1 || isFetching}
+                className={pageButtonClass}
               >
                 Previous
               </button>
               <button
                 type="button"
-                disabled
-                className="cursor-not-allowed rounded-lg border border-stone-200 px-3 py-1.5 text-stone-400"
+                onClick={() => {
+                  setPage((current) => current + 1);
+                  setSelectedId(null);
+                }}
+                disabled={page >= lastPage || isFetching}
+                className={pageButtonClass}
               >
                 Next
               </button>
@@ -193,47 +269,79 @@ export default function MessagesPage() {
         </section>
 
         <article
-          className={`${cardClass} xl:col-span-2`}
+          className={`${cardClass} self-start xl:col-span-2`}
           aria-labelledby="message-subject"
         >
-          <div className={cardHeaderClass}>
-            <h2 id="message-subject" className={cardTitleClass}>
-              Sample subject
-            </h2>
-            <span className={sampleBadgeClass}>Sample</span>
-          </div>
-
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 border-b border-stone-200 px-5 py-4 text-sm">
-            <dt className="font-medium text-stone-500">From</dt>
-            <dd className="text-stone-900">{selectedMessage?.sender}</dd>
-            <dt className="font-medium text-stone-500">Email</dt>
-            <dd className="break-all text-stone-900">{selectedMessage?.email}</dd>
-            <dt className="font-medium text-stone-500">Phone</dt>
-            <dd className="text-stone-900">—</dd>
-            <dt className="font-medium text-stone-500">Date</dt>
-            <dd className="text-stone-900">—</dd>
-          </dl>
-
-          <div className="px-5 py-5 text-sm leading-7 text-stone-700">
-            <p>
-              The full message text appears here, so it is easy to read long
-              messages without leaving the inbox.
+          {!selected ? (
+            <p className="p-5 text-sm text-stone-500">
+              Select a message to read it
             </p>
-          </div>
+          ) : (
+            <>
+              <div className={cardHeaderClass}>
+                <h2
+                  id="message-subject"
+                  className={`${cardTitleClass} break-words`}
+                >
+                  {selected.subject}
+                </h2>
+              </div>
 
-          <div className="flex flex-wrap justify-end gap-3 border-t border-stone-200 px-5 py-4">
-            <button type="button" className={secondaryButtonClass}>
-              <MailOpen size={16} aria-hidden="true" />
-              Mark as read
-            </button>
-            <button
-              type="button"
-              className={`${secondaryButtonClass} hover:text-red-600`}
-            >
-              <Trash2 size={16} aria-hidden="true" />
-              Delete
-            </button>
-          </div>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 border-b border-stone-200 px-5 py-4 text-sm">
+                <dt className="font-medium text-stone-500">From</dt>
+                <dd className="text-stone-900">{selected.name}</dd>
+                <dt className="font-medium text-stone-500">Email</dt>
+                <dd className="break-all text-stone-900">
+                  <a
+                    href={`mailto:${selected.email}`}
+                    className="hover:text-forest hover:underline"
+                  >
+                    {selected.email}
+                  </a>
+                </dd>
+                <dt className="font-medium text-stone-500">Phone</dt>
+                <dd className="text-stone-900">{selected.phone || "—"}</dd>
+                <dt className="font-medium text-stone-500">Date</dt>
+                <dd className="text-stone-900 tabular-nums">
+                  {formatDateTime(selected.created_at)}
+                </dd>
+              </dl>
+
+              <div className="px-5 py-5 text-sm leading-7 whitespace-pre-line break-words text-stone-700">
+                {selected.message}
+              </div>
+
+              <div className="flex flex-wrap justify-end gap-3 border-t border-stone-200 px-5 py-4">
+                <button
+                  type="button"
+                  onClick={() => onToggleStatus(selected)}
+                  disabled={changeStatus.isPending}
+                  className={`${secondaryButtonClass} ${disabledClass}`}
+                >
+                  {selected.status === "unread" ? (
+                    <>
+                      <MailOpen size={16} aria-hidden="true" />
+                      Mark as read
+                    </>
+                  ) : (
+                    <>
+                      <Mail size={16} aria-hidden="true" />
+                      Mark as unread
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDelete(selected)}
+                  disabled={deleteMessage.isPending}
+                  className={`${secondaryButtonClass} hover:text-red-600 ${disabledClass}`}
+                >
+                  <Trash2 size={16} aria-hidden="true" />
+                  {deleteMessage.isPending ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </>
+          )}
         </article>
       </div>
     </>

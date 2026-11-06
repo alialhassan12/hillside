@@ -5,12 +5,27 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useContacts } from "../../hooks/useContacts";
 import { useCompanyAddress } from "../../hooks/useCompanyAddress";
+import { getContactLink } from "../../lib/contactLink";
+import { toast } from "sonner";
+import { useSendMessage } from "../../hooks/useMessages";
+import { getErrorMessage, getValidationErrors } from "../../lib/apiErrors";
 
+// Limits match Laravel's POST /api/messages/send validation.
 const contactSchema = z.object({
-  name: z.string().trim().min(2, "Please enter your name"),
-  email: z.email("Please enter a valid email address"),
-  subject: z.string().trim().min(1, "Please enter a subject"),
-  phone: z.string().trim().optional(),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Please enter your name")
+    .max(255, "Name is too long"),
+  email: z
+    .email("Please enter a valid email address")
+    .max(255, "Email is too long"),
+  subject: z
+    .string()
+    .trim()
+    .min(1, "Please enter a subject")
+    .max(255, "Subject is too long"),
+  phone: z.string().trim().max(20, "Phone number is too long").optional(),
   message: z
     .string()
     .trim()
@@ -26,7 +41,9 @@ export default function ContactPage() {
     register,
     control,
     handleSubmit,
-    formState: { errors },
+    reset,
+    setError,
+    formState: { errors, isSubmitting },
   } = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
     defaultValues: {
@@ -44,14 +61,41 @@ export default function ContactPage() {
     defaultValue: "",
   });
 
-  function onSubmit(_values: ContactFormValues) {}
+  const sendMessage = useSendMessage();
+
+  async function onSubmit(values: ContactFormValues) {
+    try {
+      await sendMessage.mutateAsync({
+        name: values.name,
+        email: values.email,
+        subject: values.subject,
+        // Phone is optional; leave it out when empty.
+        ...(values.phone ? { phone: values.phone } : {}),
+        message: values.message,
+      });
+
+      reset();
+      toast.success("Thank you, your message has been sent.");
+    } catch (error) {
+      // Keep what the guest typed and show Laravel's field errors.
+      const fieldErrors = getValidationErrors(error);
+      const fields = ["name", "email", "subject", "phone", "message"] as const;
+      fields.forEach((field) => {
+        const fieldError = fieldErrors?.[field]?.[0];
+        if (fieldError) setError(field, { message: fieldError });
+      });
+
+      toast.error(
+        fieldErrors
+          ? "Please check the highlighted fields."
+          : getErrorMessage(error, "Your message could not be sent. Please try again."),
+      );
+    }
+  }
 
   const { data: contacts = [] } = useContacts();
   const { data: companyAddress } = useCompanyAddress();
 
-  const email = contacts.find(
-    (contact) => contact.name.toLowerCase() === "email",
-  );
 
   return (
     <>
@@ -100,22 +144,31 @@ export default function ContactPage() {
               </p>
             </div>
 
-            <div>
-              <h3 className="font-sans text-sm font-semibold text-heading">
-                Email:
-              </h3>
+            {contacts.map((contact) => {
+              const { kind, href, label } = getContactLink(contact.link);
 
-              {email ? (
-                <a
-                  href={`mailto:${email.link}`}
-                  className="mt-2 block break-all text-sm text-sand hover:text-forest"
-                >
-                  {email.link}
-                </a>
-              ) : (
-                <p className="mt-2 text-sm text-body">Email unavailable</p>
-              )}
-            </div>
+              return (
+                <div key={contact.id}>
+                  <h3 className="font-sans text-sm font-semibold text-heading">
+                    {contact.name.replace(/:\s*$/, "")}:
+                  </h3>
+
+                  {href ? (
+                    <a
+                      href={href}
+                      {...(kind === "web"
+                        ? { target: "_blank", rel: "noopener noreferrer" }
+                        : {})}
+                      className="mt-2 block break-all text-sm text-sand hover:text-forest"
+                    >
+                      {label}
+                    </a>
+                  ) : (
+                    <p className="mt-2 break-all text-sm text-body">{label}</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <form
@@ -176,8 +229,14 @@ export default function ContactPage() {
                   type="tel"
                   placeholder="Phone (optional)"
                   aria-label="Phone (optional)"
+                  aria-invalid={!!errors.phone}
                   className="w-full rounded-md border border-gray-300 px-4 py-3 outline-none focus:border-sand"
                 />
+                {errors.phone && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {errors.phone.message}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -205,16 +264,12 @@ export default function ContactPage() {
 
             <button
               type="submit"
-              disabled
-              title="Message submission is not available yet"
+              disabled={isSubmitting}
+              aria-busy={isSubmitting}
               className="mt-5 w-full rounded-md bg-sand px-6 py-4 font-sans text-xs font-bold uppercase tracking-wider text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Send Message
+              {isSubmitting ? "Sending..." : "Send Message"}
             </button>
-
-            <p className="mt-2 text-center text-xs text-body">
-              Online message submission is not available yet.
-            </p>
           </form>
         </div>
       </section>
