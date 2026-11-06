@@ -5,19 +5,21 @@ import BrandWordmark from "./BrandWordmark";
 import { useServices } from "../../hooks/useServices";
 import { useContacts } from "../../hooks/useContacts";
 import { useCompanyAddress } from "../../hooks/useCompanyAddress";
+import { getContactLink } from "../../lib/contactLink";
 
 export default function Footer() {
   const { data: services = [] } = useServices();
   const { data: contacts = [] } = useContacts();
   const { data: companyAddress } = useCompanyAddress();
 
-  const instagram = contacts.find(
-    (contact) => contact.name.toLowerCase() === "instagram",
-  );
-
-  const email = contacts.find(
-    (contact) => contact.name.toLowerCase() === "email",
-  );
+  // Website and social links show as icons under the logo;
+  // email, phone and anything else go in the contact details column.
+  const contactLinks = contacts.map((contact) => ({
+    contact,
+    ...getContactLink(contact.link),
+  }));
+  const socialLinks = contactLinks.filter((item) => item.kind === "web");
+  const detailLinks = contactLinks.filter((item) => item.kind !== "web");
 
   return (
     <footer className="bg-footer font-sans text-white">
@@ -30,20 +32,26 @@ export default function Footer() {
             Luxury hilltop retreat surrounded by nature's beauty.
           </p>
 
-          {instagram && (
-            <a
-              href={instagram.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Hillside Hotel Instagram"
-              className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 transition-colors hover:bg-gold"
-            >
-              <img
-                src={instagram.icon_url}
-                alt=""
-                className="h-6 w-6 object-contain"
-              />
-            </a>
+          {socialLinks.length > 0 && (
+            <ul className="flex flex-wrap gap-3">
+              {socialLinks.map(({ contact, href }) => (
+                <li key={contact.id}>
+                  <a
+                    href={href!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Hillside Hotel on ${contact.name}`}
+                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 transition-colors hover:bg-gold"
+                  >
+                    <img
+                      src={contact.icon_url}
+                      alt=""
+                      className="h-6 w-6 object-contain"
+                    />
+                  </a>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 
@@ -120,20 +128,34 @@ export default function Footer() {
               <span>{companyAddress?.address}</span>
             </div>
 
-            {email && (
-              <a
-                href={`mailto:${email.link}`}
-                className="flex items-start gap-3 hover:text-sand"
-              >
-                <img
-                  src={email.icon_url}
-                  alt=""
-                  className="h-5 w-5 shrink-0 object-contain"
-                />
+            {detailLinks.map(({ contact, href, label }) => {
+              const content = (
+                <>
+                  <img
+                    src={contact.icon_url}
+                    alt=""
+                    className="h-5 w-5 shrink-0 object-contain"
+                  />
 
-                <span className="break-all">{email.link}</span>
-              </a>
-            )}
+                  <span className="break-all">{label}</span>
+                </>
+              );
+
+              // Unknown formats are shown as text, never as a link.
+              return href ? (
+                <a
+                  key={contact.id}
+                  href={href}
+                  className="flex items-start gap-3 hover:text-sand"
+                >
+                  {content}
+                </a>
+              ) : (
+                <div key={contact.id} className="flex items-start gap-3">
+                  {content}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

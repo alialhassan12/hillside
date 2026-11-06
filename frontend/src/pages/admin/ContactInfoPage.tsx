@@ -415,9 +415,14 @@ function ContactMethods() {
             <input
               id="contact-link"
               {...register("link")}
-              placeholder="mailto:, tel: or https:// link"
+              placeholder="name@example.com, +232 77 444888 or https://..."
+              aria-describedby="contact-link-hint"
               className={inputClass}
             />
+            <p id="contact-link-hint" className="mt-1 text-xs text-stone-500">
+              Enter an email address, a phone number, or a full https:// link
+              for websites and social media. Other text is shown without a link.
+            </p>
             {errors.link && (
               <p className={errorTextClass}>{errors.link.message}</p>
             )}
